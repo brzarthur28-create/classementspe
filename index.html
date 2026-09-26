@@ -9,7 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 
     <style>
         :root {
@@ -183,6 +183,19 @@
         .row-moved {
             animation: subtleFlash 0.7s ease-out;
         }
+
+        .macos-field {
+            background: #FFFFFF;
+            border: 1px solid #D2D2D7;
+            border-radius: 6px;
+            height: 30px;
+            transition: border-color 0.12s ease, box-shadow 0.12s ease;
+        }
+
+        .macos-field:focus-within {
+            border-color: #1D1D1F;
+            box-shadow: 0 0 0 2px rgba(29, 29, 31, 0.08);
+        }
     </style>
 </head>
 <body class="min-h-screen py-8 px-4 sm:px-6">
@@ -196,39 +209,53 @@
                 <span class="text-[13px] text-[#86868B] font-normal tabular-nums">R2C · 44 spécialités</span>
             </div>
 
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1.5 sm:gap-2">
                 <button id="btn-reset-modal" type="button"
-                    class="h-8 px-3 rounded-[6px] text-[13px] font-medium text-[#515154] hover:text-[#1D1D1F] hover:bg-black/[0.05] active:bg-black/[0.08] transition">
+                    class="h-8 px-2.5 sm:px-3 rounded-[6px] text-[13px] font-medium text-[#515154] hover:text-[#1D1D1F] hover:bg-black/[0.05] active:bg-black/[0.08] transition">
                     Réinitialiser
                 </button>
+                <button id="btn-preview-pdf" type="button"
+                    class="h-8 px-3 rounded-[6px] text-[13px] font-medium text-[#1D1D1F] bg-white border border-[#D2D2D7] hover:bg-[#FAFAFC] active:bg-[#F0F0F2] transition">
+                    Aperçu PDF
+                </button>
                 <button id="btn-export-pdf" type="button"
-                    class="h-8 px-3.5 rounded-[6px] text-[13px] font-medium text-white bg-[#1D1D1F] hover:bg-[#323235] active:bg-[#000000] transition">
-                    Exporter en PDF
+                    class="h-8 px-3.5 rounded-[6px] text-[13px] font-medium text-white bg-[#1D1D1F] hover:bg-[#323235] active:bg-[#000000] transition flex items-center gap-1.5">
+                    <span id="export-btn-label">Exporter en PDF</span>
                 </button>
             </div>
         </header>
 
-        <!-- Filter & Search Bar -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-3">
-            <div class="segmented-control self-start" role="tablist">
+        <!-- Filter, Pseudo & Search Toolbar -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-2.5 mb-3">
+            <div class="segmented-control self-start shrink-0" role="tablist">
                 <button type="button" data-filter="all" class="segment-btn active">Toutes</button>
                 <button type="button" data-filter="medical" class="segment-btn">Médecine</button>
                 <button type="button" data-filter="surgical" class="segment-btn">Chirurgie</button>
                 <button type="button" data-filter="biology" class="segment-btn">Biologie</button>
             </div>
 
-            <div class="relative w-full sm:w-56">
-                <svg class="w-3.5 h-3.5 text-[#86868B] absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.2-5.2m1.7-4.3a6 6 0 11-12 0 6 6 0 0112 0z"></path>
-                </svg>
-                <input id="search-input" type="text" placeholder="Rechercher..."
-                    class="w-full h-[30px] pl-8 pr-7 bg-white rounded-[6px] text-[13px] text-[#1D1D1F] placeholder-[#86868B] border border-black/[0.08] focus:outline-none focus:border-[#1D1D1F] transition">
-                <kbd id="search-kbd" class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-[#AEAEB2] font-sans border border-black/[0.08] rounded px-1 leading-tight pointer-events-none">/</kbd>
-                <button id="clear-search" type="button" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-[#86868B] hover:text-[#1D1D1F]" aria-label="Effacer">
-                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
+                <!-- Minimalist Pseudo Input -->
+                <label class="macos-field flex items-center px-2.5 w-full sm:w-48 shrink-0 cursor-text">
+                    <span class="text-[11.5px] font-medium text-[#86868B] select-none pr-2 border-r border-black/[0.07]">Pseudo</span>
+                    <input id="pseudo-input" type="text" maxlength="32" placeholder="Ajouter un pseudo…"
+                        class="w-full pl-2 bg-transparent text-[13px] text-[#1D1D1F] placeholder-[#AEAEB2] focus:outline-none">
+                </label>
+
+                <!-- Search Input -->
+                <div class="macos-field relative flex items-center w-full sm:w-48 shrink-0">
+                    <svg class="w-3.5 h-3.5 text-[#86868B] absolute left-2.5 pointer-events-none" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.2-5.2m1.7-4.3a6 6 0 11-12 0 6 6 0 0112 0z"></path>
                     </svg>
-                </button>
+                    <input id="search-input" type="text" placeholder="Rechercher..."
+                        class="w-full h-full pl-8 pr-7 bg-transparent text-[13px] text-[#1D1D1F] placeholder-[#86868B] focus:outline-none">
+                    <kbd id="search-kbd" class="absolute right-2 text-[10px] text-[#AEAEB2] font-sans border border-black/[0.08] rounded px-1 leading-tight pointer-events-none">/</kbd>
+                    <button id="clear-search" type="button" class="hidden absolute right-2 text-[#86868B] hover:text-[#1D1D1F]" aria-label="Effacer">
+                        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                        </svg>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -268,57 +295,85 @@
         </div>
     </div>
 
+    <!-- High-Resolution A4 PDF Preview Modal -->
+    <div id="pdf-preview-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-3 sm:p-6 bg-black/40 backdrop-blur-[3px]">
+        <div class="bg-[#F5F5F7] rounded-[12px] max-w-[720px] w-full max-h-[92vh] flex flex-col border border-black/15 shadow-2xl overflow-hidden">
+            <div class="flex items-center justify-between px-4 py-3 bg-white border-b border-black/[0.08]">
+                <div class="flex items-baseline gap-2">
+                    <h2 class="text-[14px] font-semibold text-[#1D1D1F]">Aperçu A4 (210 × 297 mm)</h2>
+                    <span class="text-[12px] text-[#86868B]">300 DPI · Marges sécurisées</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="close-preview-btn" type="button"
+                        class="h-7 px-3 rounded-[5px] text-[12.5px] font-medium text-[#515154] hover:bg-black/5 transition">
+                        Fermer
+                    </button>
+                    <button id="modal-download-pdf-btn" type="button"
+                        class="h-7 px-3 rounded-[5px] text-[12.5px] font-medium bg-[#1D1D1F] text-white hover:bg-[#323235] transition">
+                        Télécharger le PDF
+                    </button>
+                </div>
+            </div>
+            <div class="p-4 sm:p-6 overflow-y-auto flex justify-center bg-[#E5E5EA]/60">
+                <img id="pdf-preview-img" alt="Aperçu du classement A4"
+                    class="w-full max-w-[560px] h-auto bg-white shadow-md border border-black/10 rounded-[2px]" />
+            </div>
+        </div>
+    </div>
+
     <script>
         const INITIAL_SPECIALTIES = [
-            { id: "allergologie", name: "Allergologie", category: "medical", meta: "Médecine · 4 ans" },
-            { id: "anapath", name: "Anatomie et cytologie pathologiques", category: "medical", meta: "Médecine · 5 ans" },
-            { id: "anesthesie", name: "Anesthésie-réanimation", category: "medical", meta: "Médecine · 5 ans" },
-            { id: "biologie", name: "Biologie médicale", category: "biology", meta: "Biologie · 4 ans" },
-            { id: "chir-maxillo", name: "Chirurgie maxillo-faciale", category: "surgical", meta: "Chirurgie · 6 ans" },
-            { id: "chir-orale", name: "Chirurgie orale", category: "surgical", meta: "Chirurgie · 4 ans" },
-            { id: "chir-ortho", name: "Chirurgie orthopédique et traumatologique", category: "surgical", meta: "Chirurgie · 6 ans" },
-            { id: "chir-ped", name: "Chirurgie pédiatrique", category: "surgical", meta: "Chirurgie · 6 ans" },
-            { id: "chir-plastique", name: "Chirurgie plastique, reconstructrice et esthétique", category: "surgical", meta: "Chirurgie · 6 ans" },
-            { id: "chir-thoracique", name: "Chirurgie thoracique et cardiovasculaire", category: "surgical", meta: "Chirurgie · 6 ans" },
-            { id: "chir-vasculaire", name: "Chirurgie vasculaire", category: "surgical", meta: "Chirurgie · 6 ans" },
-            { id: "chir-viscerale", name: "Chirurgie viscérale et digestive", category: "surgical", meta: "Chirurgie · 6 ans" },
-            { id: "dermatologie", name: "Dermatologie et vénéréologie", category: "medical", meta: "Médecine · 4 ans" },
-            { id: "endocrinologie", name: "Endocrinologie-diabétologie-nutrition", category: "medical", meta: "Médecine · 4 ans" },
-            { id: "genetique", name: "Génétique médicale", category: "medical", meta: "Médecine · 4 ans" },
-            { id: "geriatrie", name: "Gériatrie", category: "medical", meta: "Médecine · 4 ans" },
-            { id: "gyneco-med", name: "Gynécologie médicale", category: "medical", meta: "Médecine · 4 ans" },
-            { id: "gyneco-obs", name: "Gynécologie obstétrique", category: "surgical", meta: "Chirurgie · 6 ans" },
-            { id: "hematologie", name: "Hématologie", category: "medical", meta: "Médecine · 5 ans" },
-            { id: "hge", name: "Hépato-gastro-entérologie", category: "medical", meta: "Médecine · 4 ans" },
-            { id: "infectiologie", name: "Maladies infectieuses et tropicales", category: "medical", meta: "Médecine · 5 ans" },
-            { id: "cardio", name: "Médecine cardiovasculaire", category: "medical", meta: "Médecine · 4 ans" },
-            { id: "urgences", name: "Médecine d'urgence", category: "medical", meta: "Médecine · 4 ans" },
-            { id: "med-travail", name: "Médecine et santé au travail", category: "medical", meta: "Médecine · 4 ans" },
-            { id: "med-generale", name: "Médecine générale", category: "medical", meta: "Médecine · 4 ans" },
-            { id: "mir", name: "Médecine intensive-réanimation", category: "medical", meta: "Médecine · 5 ans" },
-            { id: "med-interne", name: "Médecine interne et immunologie clinique", category: "medical", meta: "Médecine · 5 ans" },
-            { id: "med-legale", name: "Médecine légale et expertises médicales", category: "medical", meta: "Médecine · 4 ans" },
-            { id: "med-nucleaire", name: "Médecine nucléaire", category: "medical", meta: "Médecine · 4 ans" },
-            { id: "mpr", name: "Médecine physique et de réadaptation", category: "medical", meta: "Médecine · 4 ans" },
-            { id: "med-vasculaire", name: "Médecine vasculaire", category: "medical", meta: "Médecine · 4 ans" },
-            { id: "nephrologie", name: "Néphrologie", category: "medical", meta: "Médecine · 4 ans" },
-            { id: "neurochir", name: "Neurochirurgie", category: "surgical", meta: "Chirurgie · 6 ans" },
-            { id: "neurologie", name: "Neurologie", category: "medical", meta: "Médecine · 4 ans" },
-            { id: "oncologie", name: "Oncologie", category: "medical", meta: "Médecine · 5 ans" },
-            { id: "ophtalmo", name: "Ophtalmologie", category: "surgical", meta: "Chirurgie · 6 ans" },
-            { id: "orl", name: "Oto-rhino-laryngologie - chirurgie cervico-faciale", category: "surgical", meta: "Chirurgie · 6 ans" },
-            { id: "pediatrie", name: "Pédiatrie", category: "medical", meta: "Médecine · 5 ans" },
-            { id: "pneumologie", name: "Pneumologie", category: "medical", meta: "Médecine · 4 ans" },
-            { id: "psychiatrie", name: "Psychiatrie", category: "medical", meta: "Médecine · 4 ans" },
-            { id: "radiologie", name: "Radiologie et imagerie médicale", category: "medical", meta: "Médecine · 5 ans" },
-            { id: "rhumatologie", name: "Rhumatologie", category: "medical", meta: "Médecine · 4 ans" },
-            { id: "sante-publique", name: "Santé publique", category: "medical", meta: "Médecine · 4 ans" },
-            { id: "urologie", name: "Urologie", category: "surgical", meta: "Chirurgie · 6 ans" }
+            { id: "allergologie", name: "Allergologie", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "anapath", name: "Anatomie et cytologie pathologiques", category: "medical", meta: "Médecine · 5 ans", shortMeta: "Méd · 5 ans" },
+            { id: "anesthesie", name: "Anesthésie-réanimation", category: "medical", meta: "Médecine · 5 ans", shortMeta: "Méd · 5 ans" },
+            { id: "biologie", name: "Biologie médicale", category: "biology", meta: "Biologie · 4 ans", shortMeta: "Bio · 4 ans" },
+            { id: "chir-maxillo", name: "Chirurgie maxillo-faciale", category: "surgical", meta: "Chirurgie · 6 ans", shortMeta: "Chir · 6 ans" },
+            { id: "chir-orale", name: "Chirurgie orale", category: "surgical", meta: "Chirurgie · 4 ans", shortMeta: "Chir · 4 ans" },
+            { id: "chir-ortho", name: "Chirurgie orthopédique et traumatologique", category: "surgical", meta: "Chirurgie · 6 ans", shortMeta: "Chir · 6 ans" },
+            { id: "chir-ped", name: "Chirurgie pédiatrique", category: "surgical", meta: "Chirurgie · 6 ans", shortMeta: "Chir · 6 ans" },
+            { id: "chir-plastique", name: "Chirurgie plastique, reconstructrice et esthétique", category: "surgical", meta: "Chirurgie · 6 ans", shortMeta: "Chir · 6 ans" },
+            { id: "chir-thoracique", name: "Chirurgie thoracique et cardiovasculaire", category: "surgical", meta: "Chirurgie · 6 ans", shortMeta: "Chir · 6 ans" },
+            { id: "chir-vasculaire", name: "Chirurgie vasculaire", category: "surgical", meta: "Chirurgie · 6 ans", shortMeta: "Chir · 6 ans" },
+            { id: "chir-viscerale", name: "Chirurgie viscérale et digestive", category: "surgical", meta: "Chirurgie · 6 ans", shortMeta: "Chir · 6 ans" },
+            { id: "dermatologie", name: "Dermatologie et vénéréologie", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "endocrinologie", name: "Endocrinologie-diabétologie-nutrition", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "genetique", name: "Génétique médicale", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "geriatrie", name: "Gériatrie", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "gyneco-med", name: "Gynécologie médicale", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "gyneco-obs", name: "Gynécologie obstétrique", category: "surgical", meta: "Chirurgie · 6 ans", shortMeta: "Chir · 6 ans" },
+            { id: "hematologie", name: "Hématologie", category: "medical", meta: "Médecine · 5 ans", shortMeta: "Méd · 5 ans" },
+            { id: "hge", name: "Hépato-gastro-entérologie", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "infectiologie", name: "Maladies infectieuses et tropicales", category: "medical", meta: "Médecine · 5 ans", shortMeta: "Méd · 5 ans" },
+            { id: "cardio", name: "Médecine cardiovasculaire", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "urgences", name: "Médecine d'urgence", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "med-travail", name: "Médecine et santé au travail", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "med-generale", name: "Médecine générale", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "mir", name: "Médecine intensive-réanimation", category: "medical", meta: "Médecine · 5 ans", shortMeta: "Méd · 5 ans" },
+            { id: "med-interne", name: "Médecine interne et immunologie clinique", category: "medical", meta: "Médecine · 5 ans", shortMeta: "Méd · 5 ans" },
+            { id: "med-legale", name: "Médecine légale et expertises médicales", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "med-nucleaire", name: "Médecine nucléaire", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "mpr", name: "Médecine physique et de réadaptation", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "med-vasculaire", name: "Médecine vasculaire", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "nephrologie", name: "Néphrologie", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "neurochir", name: "Neurochirurgie", category: "surgical", meta: "Chirurgie · 6 ans", shortMeta: "Chir · 6 ans" },
+            { id: "neurologie", name: "Neurologie", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "oncologie", name: "Oncologie", category: "medical", meta: "Médecine · 5 ans", shortMeta: "Méd · 5 ans" },
+            { id: "ophtalmo", name: "Ophtalmologie", category: "surgical", meta: "Chirurgie · 6 ans", shortMeta: "Chir · 6 ans" },
+            { id: "orl", name: "Oto-rhino-laryngologie - chirurgie cervico-faciale", category: "surgical", meta: "Chirurgie · 6 ans", shortMeta: "Chir · 6 ans" },
+            { id: "pediatrie", name: "Pédiatrie", category: "medical", meta: "Médecine · 5 ans", shortMeta: "Méd · 5 ans" },
+            { id: "pneumologie", name: "Pneumologie", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "psychiatrie", name: "Psychiatrie", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "radiologie", name: "Radiologie et imagerie médicale", category: "medical", meta: "Médecine · 5 ans", shortMeta: "Méd · 5 ans" },
+            { id: "rhumatologie", name: "Rhumatologie", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "sante-publique", name: "Santé publique", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "urologie", name: "Urologie", category: "surgical", meta: "Chirurgie · 6 ans", shortMeta: "Chir · 6 ans" }
         ];
 
         const STORAGE_KEY = "des_ranking_france_v1";
+        const PSEUDO_STORAGE_KEY = "des_ranking_pseudo_v1";
 
         let specialties = [];
+        let userPseudo = "";
         let activeCategory = "all";
         let searchQuery = "";
         let lastMovedId = null;
@@ -329,6 +384,10 @@
 
         function loadState() {
             try {
+                const savedPseudo = localStorage.getItem(PSEUDO_STORAGE_KEY);
+                if (typeof savedPseudo === "string") {
+                    userPseudo = savedPseudo;
+                }
                 const raw = localStorage.getItem(STORAGE_KEY);
                 if (raw) {
                     const ids = JSON.parse(raw);
@@ -352,6 +411,14 @@
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(specialties.map(s => s.id)));
             } catch (e) {
                 console.warn("Storage write error:", e);
+            }
+        }
+
+        function savePseudo() {
+            try {
+                localStorage.setItem(PSEUDO_STORAGE_KEY, userPseudo);
+            } catch (e) {
+                console.warn("Pseudo write error:", e);
             }
         }
 
@@ -499,92 +566,400 @@
             });
         }
 
-        function exportToPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({
-                orientation: "portrait",
-                unit: "mm",
-                format: "a4"
+        function drawRoundedRect(ctx, x, y, w, h, r) {
+            const radius = Math.min(r, w / 2, h / 2);
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + w - radius, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+            ctx.lineTo(x + w, y + h - radius);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+            ctx.lineTo(x + radius, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+        }
+
+        function wrapTextLines(ctx, text, maxWidth) {
+            const words = text.split(" ");
+            const lines = [];
+            let currentLine = "";
+
+            for (let i = 0; i < words.length; i++) {
+                const word = words[i];
+                const testLine = currentLine ? `${currentLine} ${word}` : word;
+                if (ctx.measureText(testLine).width <= maxWidth || !currentLine) {
+                    currentLine = testLine;
+                } else {
+                    lines.push(currentLine);
+                    currentLine = word;
+                }
+            }
+            if (currentLine) {
+                lines.push(currentLine);
+            }
+            return lines;
+        }
+
+        async function renderA4SheetCanvas(dateStr) {
+            if (document.fonts && document.fonts.ready) {
+                try {
+                    await document.fonts.ready;
+                } catch (e) {
+                    // Fallback to system fonts if font promise fails
+                }
+            }
+
+            // Exact 300 DPI A4 dimensions: 2480 x 3508 px (210mm x 297mm)
+            const W_PX = 2480;
+            const H_PX = 3508;
+            const MM_TO_PX = W_PX / 210;
+            const mm = (v) => v * MM_TO_PX;
+
+            const canvas = document.createElement("canvas");
+            canvas.width = W_PX;
+            canvas.height = H_PX;
+            const ctx = canvas.getContext("2d");
+
+            const FONT_SANS = '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+            const FONT_MONO = '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace';
+
+            // Pure white A4 background
+            ctx.fillStyle = "#FFFFFF";
+            ctx.fillRect(0, 0, W_PX, H_PX);
+            ctx.textBaseline = "middle";
+
+            // Safe print margins: 14mm on all sides -> X: 14..196mm (182mm wide), Y: 14..283mm
+            const MARGIN_X = 14;
+            const CONTENT_W = 182;
+            const RIGHT_X = MARGIN_X + CONTENT_W;
+            const cleanPseudo = userPseudo.trim();
+
+            // 1. EDITORIAL HEADER (Y = 14mm to 30mm)
+            ctx.textAlign = "left";
+            ctx.fillStyle = "#86868B";
+            ctx.font = `600 ${mm(2.35)}px ${FONT_SANS}`;
+            ctx.fillText("R2C · ÉPREUVES DÉMATÉRIALISÉES NATIONALES", mm(MARGIN_X), mm(16.5));
+
+            ctx.fillStyle = "#1D1D1F";
+            ctx.font = `700 ${mm(5.4)}px ${FONT_SANS}`;
+            ctx.fillText("Classement des Vœux de Spécialités (DES)", mm(MARGIN_X), mm(23.5));
+
+            // Right metadata stack
+            ctx.textAlign = "right";
+            if (cleanPseudo) {
+                ctx.fillStyle = "#1D1D1F";
+                ctx.font = `700 ${mm(3.8)}px ${FONT_SANS}`;
+                ctx.fillText(cleanPseudo, mm(RIGHT_X), mm(17.2));
+
+                ctx.fillStyle = "#515154";
+                ctx.font = `500 ${mm(2.65)}px ${FONT_SANS}`;
+                ctx.fillText(`Édition du ${dateStr}`, mm(RIGHT_X), mm(21.8));
+
+                ctx.fillStyle = "#86868B";
+                ctx.font = `400 ${mm(2.35)}px ${FONT_SANS}`;
+                ctx.fillText("44 spécialités classées", mm(RIGHT_X), mm(25.5));
+            } else {
+                ctx.fillStyle = "#1D1D1F";
+                ctx.font = `600 ${mm(2.9)}px ${FONT_SANS}`;
+                ctx.fillText(`Édition du ${dateStr}`, mm(RIGHT_X), mm(20.5));
+
+                ctx.fillStyle = "#86868B";
+                ctx.font = `400 ${mm(2.45)}px ${FONT_SANS}`;
+                ctx.fillText("44 spécialités classées", mm(RIGHT_X), mm(24.8));
+            }
+
+            // Header divider rule
+            ctx.strokeStyle = "#1D1D1F";
+            ctx.lineWidth = mm(0.42);
+            ctx.beginPath();
+            ctx.moveTo(mm(MARGIN_X), mm(29.2));
+            ctx.lineTo(mm(RIGHT_X), mm(29.2));
+            ctx.stroke();
+
+            // 2. VŒUX PRIORITAIRES — TOP 3 (Y = 34mm to 60.5mm)
+            ctx.textAlign = "left";
+            ctx.fillStyle = "#86868B";
+            ctx.font = `600 ${mm(2.2)}px ${FONT_SANS}`;
+            ctx.fillText("VŒUX PRIORITAIRES (TOP 3)", mm(MARGIN_X), mm(34.2));
+
+            const topBoxY = 36.8;
+            const topBoxH = 22.5;
+            const cardW = CONTENT_W / 3;
+
+            drawRoundedRect(ctx, mm(MARGIN_X), mm(topBoxY), mm(CONTENT_W), mm(topBoxH), mm(1.8));
+            ctx.fillStyle = "#F5F5F7";
+            ctx.fill();
+            ctx.lineWidth = mm(0.26);
+            ctx.strokeStyle = "#D2D2D7";
+            ctx.stroke();
+
+            const top3 = specialties.slice(0, 3);
+            top3.forEach((item, idx) => {
+                const cardX = MARGIN_X + idx * cardW;
+
+                // Vertical separator between cards
+                if (idx > 0) {
+                    ctx.beginPath();
+                    ctx.moveTo(mm(cardX), mm(topBoxY));
+                    ctx.lineTo(mm(cardX), mm(topBoxY + topBoxH));
+                    ctx.strokeStyle = "#D2D2D7";
+                    ctx.lineWidth = mm(0.26);
+                    ctx.stroke();
+                }
+
+                // Rank badge 01 / 02 / 03
+                const badgeX = cardX + 3.2;
+                const badgeY = topBoxY + 3.0;
+                const badgeW = 6.6;
+                const badgeH = 4.5;
+                drawRoundedRect(ctx, mm(badgeX), mm(badgeY), mm(badgeW), mm(badgeH), mm(0.9));
+                ctx.fillStyle = "#1D1D1F";
+                ctx.fill();
+
+                ctx.fillStyle = "#FFFFFF";
+                ctx.font = `600 ${mm(2.5)}px ${FONT_MONO}`;
+                ctx.textAlign = "center";
+                ctx.fillText(`0${idx + 1}`, mm(badgeX + badgeW / 2), mm(badgeY + badgeH / 2 + 0.1));
+
+                // Maquette on top right of card
+                ctx.textAlign = "right";
+                ctx.fillStyle = "#6E6E73";
+                ctx.font = `500 ${mm(2.35)}px ${FONT_SANS}`;
+                ctx.fillText(item.meta, mm(cardX + cardW - 3.2), mm(badgeY + badgeH / 2));
+
+                // Specialty name wrapped cleanly inside card (never clipped)
+                ctx.textAlign = "left";
+                ctx.fillStyle = "#1D1D1F";
+                ctx.font = `600 ${mm(2.95)}px ${FONT_SANS}`;
+                const maxCardTextW = mm(cardW - 6.4);
+                const lines = wrapTextLines(ctx, item.name, maxCardTextW);
+
+                if (lines.length === 1) {
+                    ctx.fillText(lines[0], mm(cardX + 3.2), mm(topBoxY + 14.2));
+                } else {
+                    ctx.fillText(lines[0], mm(cardX + 3.2), mm(topBoxY + 12.4));
+                    ctx.fillText(lines[1], mm(cardX + 3.2), mm(topBoxY + 16.3));
+                }
             });
 
-            const pageWidth = 210;
-            const marginX = 15;
-            const contentWidth = pageWidth - marginX * 2;
+            // 3. TWO-COLUMN 44 DES TABLE (Y = 65.5mm to 269.5mm)
+            const colGap = 7.0;
+            const colW = (CONTENT_W - colGap) / 2; // 87.5mm per column
+            const leftColX = MARGIN_X;
+            const rightColX = MARGIN_X + colW + colGap;
+
+            const tableHeaderY = 66.2;
+            const tableTopRuleY = 68.8;
+            const rowH = 9.05; // 22 * 9.05mm = 199.1mm -> ends at 267.9mm
+
+            [leftColX, rightColX].forEach((colX) => {
+                ctx.textAlign = "left";
+                ctx.fillStyle = "#86868B";
+                ctx.font = `600 ${mm(2.15)}px ${FONT_SANS}`;
+                ctx.fillText("RANG", mm(colX + 1.5), mm(tableHeaderY));
+                ctx.fillText("SPÉCIALITÉ", mm(colX + 11.2), mm(tableHeaderY));
+
+                ctx.textAlign = "right";
+                ctx.fillText("MAQUETTE", mm(colX + colW - 1.5), mm(tableHeaderY));
+
+                ctx.beginPath();
+                ctx.moveTo(mm(colX), mm(tableTopRuleY));
+                ctx.lineTo(mm(colX + colW), mm(tableTopRuleY));
+                ctx.strokeStyle = "#1D1D1F";
+                ctx.lineWidth = mm(0.32);
+                ctx.stroke();
+            });
+
+            const drawColumnRows = (items, startRank, colX) => {
+                items.forEach((item, idx) => {
+                    const rank = startRank + idx;
+                    const rowY = tableTopRuleY + idx * rowH;
+                    const centerY = rowY + rowH / 2;
+
+                    // Subtle zebra striping
+                    if (idx % 2 === 1) {
+                        ctx.fillStyle = "#FAFAFC";
+                        ctx.fillRect(mm(colX), mm(rowY), mm(colW), mm(rowH));
+                    }
+
+                    // Row hairline border
+                    ctx.beginPath();
+                    ctx.moveTo(mm(colX), mm(rowY + rowH));
+                    ctx.lineTo(mm(colX + colW), mm(rowY + rowH));
+                    ctx.strokeStyle = "#E5E5EA";
+                    ctx.lineWidth = mm(0.18);
+                    ctx.stroke();
+
+                    // Rank badge (01-03 dark fill, 04-10 framed pill, 11-44 tabular muted)
+                    const bX = colX + 1.5;
+                    const bW = 6.8;
+                    const bH = 4.6;
+                    const bY = centerY - bH / 2;
+                    const rStr = formatRank(rank);
+
+                    if (rank <= 3) {
+                        drawRoundedRect(ctx, mm(bX), mm(bY), mm(bW), mm(bH), mm(0.9));
+                        ctx.fillStyle = "#1D1D1F";
+                        ctx.fill();
+                        ctx.fillStyle = "#FFFFFF";
+                        ctx.font = `600 ${mm(2.45)}px ${FONT_MONO}`;
+                    } else if (rank <= 10) {
+                        drawRoundedRect(ctx, mm(bX), mm(bY), mm(bW), mm(bH), mm(0.9));
+                        ctx.fillStyle = "#F5F5F7";
+                        ctx.fill();
+                        ctx.lineWidth = mm(0.24);
+                        ctx.strokeStyle = "#C7C7CC";
+                        ctx.stroke();
+                        ctx.fillStyle = "#1D1D1F";
+                        ctx.font = `600 ${mm(2.45)}px ${FONT_MONO}`;
+                    } else {
+                        ctx.fillStyle = "#86868B";
+                        ctx.font = `500 ${mm(2.45)}px ${FONT_MONO}`;
+                    }
+
+                    ctx.textAlign = "center";
+                    ctx.fillText(rStr, mm(bX + bW / 2), mm(centerY + 0.1));
+
+                    // Maquette label on the right
+                    ctx.textAlign = "right";
+                    ctx.fillStyle = "#86868B";
+                    ctx.font = `500 ${mm(2.25)}px ${FONT_MONO}`;
+                    const metaRightX = colX + colW - 1.5;
+                    ctx.fillText(item.shortMeta, mm(metaRightX), mm(centerY));
+
+                    // Specialty name with automatic 2-line wrapping so zero text is ever cut off
+                    const nameX = colX + 10.6;
+                    const maxNameWidth = mm(colW - 10.6 - 19.5);
+                    ctx.textAlign = "left";
+                    ctx.fillStyle = "#1D1D1F";
+                    ctx.font = `${rank <= 10 ? 600 : 400} ${mm(2.78)}px ${FONT_SANS}`;
+
+                    const nameLines = wrapTextLines(ctx, item.name, maxNameWidth);
+                    if (nameLines.length === 1) {
+                        ctx.fillText(nameLines[0], mm(nameX), mm(centerY));
+                    } else {
+                        ctx.font = `${rank <= 10 ? 600 : 400} ${mm(2.62)}px ${FONT_SANS}`;
+                        ctx.fillText(nameLines[0], mm(nameX), mm(centerY - 1.65));
+                        ctx.fillText(nameLines[1], mm(nameX), mm(centerY + 1.65));
+                    }
+                });
+            };
+
+            drawColumnRows(specialties.slice(0, 22), 1, leftColX);
+            drawColumnRows(specialties.slice(22, 44), 23, rightColX);
+
+            // 4. EDITORIAL FOOTER (Y = 274.5mm to 281mm — 16mm above bottom edge)
+            const footerLineY = 274.5;
+            const footerTextY = 279.2;
+
+            ctx.beginPath();
+            ctx.moveTo(mm(MARGIN_X), mm(footerLineY));
+            ctx.lineTo(mm(RIGHT_X), mm(footerLineY));
+            ctx.strokeStyle = "#D2D2D7";
+            ctx.lineWidth = mm(0.28);
+            ctx.stroke();
+
+            const top10 = specialties.slice(0, 10);
+            const medCount = top10.filter(s => s.category === "medical").length;
+            const chirCount = top10.filter(s => s.category === "surgical").length;
+            const bioCount = top10.filter(s => s.category === "biology").length;
+
+            ctx.textAlign = "left";
+            ctx.fillStyle = "#1D1D1F";
+            ctx.font = `600 ${mm(2.35)}px ${FONT_SANS}`;
+            const labelProfile = "Profil du Top 10 : ";
+            ctx.fillText(labelProfile, mm(MARGIN_X), mm(footerTextY));
+            const labelW = ctx.measureText(labelProfile).width;
+
+            ctx.fillStyle = "#6E6E73";
+            ctx.font = `400 ${mm(2.35)}px ${FONT_SANS}`;
+            ctx.fillText(
+                `${medCount} Médecine · ${chirCount} Chirurgie · ${bioCount} Biologie`,
+                mm(MARGIN_X) + labelW,
+                mm(footerTextY)
+            );
+
+            ctx.textAlign = "right";
+            ctx.fillStyle = "#86868B";
+            ctx.font = `400 ${mm(2.35)}px ${FONT_SANS}`;
+            const footerRight = `R2C / EDN${cleanPseudo ? ` · ${cleanPseudo}` : ""} · ${dateStr} · Page 1/1`;
+            ctx.fillText(footerRight, mm(RIGHT_X), mm(footerTextY));
+
+            return canvas;
+        }
+
+        function getFormattedDate() {
             const now = new Date();
             const dateStr = now.toLocaleDateString("fr-FR", {
                 day: "2-digit",
                 month: "long",
                 year: "numeric"
             });
-
-            // Editorial Header
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(12);
-            doc.setTextColor(29, 29, 31);
-            doc.text("Classement DES — R2C", marginX, 18);
-
-            doc.setFont("helvetica", "normal");
-            doc.setFontSize(9);
-            doc.setTextColor(134, 134, 139);
-            doc.text(dateStr, pageWidth - marginX, 18, { align: "right" });
-
-            // Crisp Top Rule
-            doc.setDrawColor(29, 29, 31);
-            doc.setLineWidth(0.35);
-            doc.line(marginX, 21.5, pageWidth - marginX, 21.5);
-
-            // Two-column layout (1-22 left, 23-44 right)
-            const colGap = 8;
-            const colWidth = (contentWidth - colGap) / 2;
-            const startY = 28;
-            const rowHeight = 11.2;
-
-            specialties.forEach((item, index) => {
-                const rank = index + 1;
-                const isLeft = index < 22;
-                const rowIdx = isLeft ? index : index - 22;
-                const x = isLeft ? marginX : marginX + colWidth + colGap;
-                const y = startY + rowIdx * rowHeight;
-
-                // Hairline row divider
-                doc.setDrawColor(230, 230, 235);
-                doc.setLineWidth(0.2);
-                doc.line(x, y + rowHeight - 2.2, x + colWidth, y + rowHeight - 2.2);
-
-                // Tabular Rank
-                doc.setFont("helvetica", "bold");
-                doc.setFontSize(8.5);
-                doc.setTextColor(29, 29, 31);
-                doc.text(formatRank(rank), x, y + 5);
-
-                // Category & Duration on right side of column
-                doc.setFont("helvetica", "normal");
-                doc.setFontSize(7.5);
-                doc.setTextColor(134, 134, 139);
-                doc.text(item.meta, x + colWidth, y + 5, { align: "right" });
-
-                // Specialty Name
-                doc.setFont("helvetica", "normal");
-                doc.setFontSize(8.8);
-                doc.setTextColor(29, 29, 31);
-
-                const metaWidth = doc.getTextWidth(item.meta);
-                const maxNameWidth = colWidth - 8 - metaWidth - 3;
-                let displayName = item.name;
-                while (doc.getTextWidth(displayName) > maxNameWidth && displayName.length > 8) {
-                    displayName = displayName.slice(0, -2) + "…";
-                }
-                doc.text(displayName, x + 7.5, y + 5);
-            });
-
             const isoDate = now.toISOString().slice(0, 10);
-            doc.save(`Classement-DES-R2C-${isoDate}.pdf`);
+            return { dateStr, isoDate };
+        }
+
+        async function exportToPDF() {
+            const btn = document.getElementById("btn-export-pdf");
+            const label = document.getElementById("export-btn-label");
+            const originalText = label.textContent;
+
+            try {
+                btn.disabled = true;
+                label.textContent = "Génération…";
+
+                const { dateStr, isoDate } = getFormattedDate();
+                const canvas = await renderA4SheetCanvas(dateStr);
+
+                const imgData = canvas.toDataURL("image/jpeg", 0.98);
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({
+                    orientation: "portrait",
+                    unit: "mm",
+                    format: "a4",
+                    compress: true
+                });
+
+                doc.addImage(imgData, "JPEG", 0, 0, 210, 297, undefined, "FAST");
+
+                const slugPseudo = userPseudo.trim()
+                    ? "-" + userPseudo.trim().replace(/[^a-zA-Z0-9_-]/g, "-")
+                    : "";
+                doc.save(`Classement-DES-R2C${slugPseudo}-${isoDate}.pdf`);
+            } catch (err) {
+                console.error("Erreur lors de la génération du PDF:", err);
+            } finally {
+                btn.disabled = false;
+                label.textContent = originalText;
+            }
+        }
+
+        async function openPdfPreviewModal() {
+            const modal = document.getElementById("pdf-preview-modal");
+            const previewImg = document.getElementById("pdf-preview-img");
+            const { dateStr } = getFormattedDate();
+
+            const canvas = await renderA4SheetCanvas(dateStr);
+            previewImg.src = canvas.toDataURL("image/png");
+
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
         }
 
         document.addEventListener("DOMContentLoaded", () => {
             loadState();
             renderList();
             initSortable();
+
+            // Pseudo input initialization & persistence
+            const pseudoInput = document.getElementById("pseudo-input");
+            pseudoInput.value = userPseudo;
+            pseudoInput.addEventListener("input", (e) => {
+                userPseudo = e.target.value;
+                savePseudo();
+            });
 
             const listEl = document.getElementById("specialties-list");
 
@@ -699,6 +1074,23 @@
                 saveState();
                 resetModal.classList.add("hidden");
                 resetModal.classList.remove("flex");
+            });
+
+            // PDF Preview & Export handlers
+            const previewModal = document.getElementById("pdf-preview-modal");
+            document.getElementById("btn-preview-pdf").addEventListener("click", openPdfPreviewModal);
+            document.getElementById("close-preview-btn").addEventListener("click", () => {
+                previewModal.classList.add("hidden");
+                previewModal.classList.remove("flex");
+            });
+            document.getElementById("modal-download-pdf-btn").addEventListener("click", () => {
+                exportToPDF();
+            });
+            previewModal.addEventListener("click", (e) => {
+                if (e.target === previewModal) {
+                    previewModal.classList.add("hidden");
+                    previewModal.classList.remove("flex");
+                }
             });
 
             document.getElementById("btn-export-pdf").addEventListener("click", exportToPDF);
