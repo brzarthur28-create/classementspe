@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classement DES — R2C</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-page: #F5F5F7;
+            --bg-surface: #FFFFFF;
+            --text-primary: #1D1D1F;
+            --text-secondary: #86868B;
+            --text-muted: #AEAEB2;
+            --border-outer: rgba(0, 0, 0, 0.08);
+            --border-hairline: rgba(0, 0, 0, 0.06);
+            --row-hover: #FAFAFC;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-page);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
+            letter-spacing: -0.015em;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            margin: 0;
+            padding: 0;
+        }
+
+        .tabular-nums {
+            font-variant-numeric: tabular-nums;
+        }
+
+        .table-surface {
+            background: var(--bg-surface);
+            border-radius: 10px;
+            border: 1px solid var(--border-outer);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+            overflow: hidden;
+        }
+
+        .des-row {
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 14px;
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-hairline);
+            transition: background-color 0.1s ease;
+            user-select: none;
+        }
+
+        .des-row:last-child {
+            border-bottom: none;
+        }
+
+        .des-row:hover {
+            background-color: var(--row-hover);
+        }
+
+        .des-row .row-actions {
+            opacity: 0;
+            transition: opacity 0.12s ease;
+        }
+
+        .des-row:hover .row-actions,
+        .des-row:focus-within .row-actions {
+            opacity: 1;
+        }
+
+        @media (hover: none) {
+            .des-row .row-actions {
+                opacity: 1;
+            }
+        }
+
+        .grip-icon {
+            color: #C7C7CC;
+            transition: color 0.12s ease;
+        }
+
+        .des-row:hover .grip-icon {
+            color: #86868B;
+        }
+
+        .sortable-ghost {
+            background-color: #F5F5F7 !important;
+            color: transparent !important;
+        }
+
+        .sortable-ghost * {
+            opacity: 0;
+        }
+
+        .sortable-drag {
+            background-color: #FFFFFF !important;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.08) !important;
+            border-radius: 6px;
+            z-index: 50;
+        }
+
+        .segmented-control {
+            display: inline-flex;
+            background: rgba(118, 118, 128, 0.11);
+            padding: 2px;
+            border-radius: 7px;
+        }
+
+        .segment-btn {
+            font-size: 12.5px;
+            font-weight: 500;
+            color: #515154;
+            padding: 4px 11px;
+            border-radius: 5.5px;
+            transition: all 0.12s ease;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .segment-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .segment-btn.active {
+            background: #FFFFFF;
+            color: var(--text-primary);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 0 0 0.5px rgba(0, 0, 0, 0.04);
+        }
+
+        .rank-input {
+            width: 32px;
+            height: 24px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            text-align: right;
+            padding-right: 4px;
+            font-variant-numeric: tabular-nums;
+            transition: border-color 0.12s ease, background-color 0.12s ease;
+        }
+
+        .rank-input:hover {
+            background: rgba(0, 0, 0, 0.04);
+        }
+
+        .rank-input:focus {
+            outline: none;
+            background: #FFFFFF;
+            border-color: #1D1D1F;
+            text-align: center;
+            padding-right: 0;
+        }
+
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        @keyframes subtleFlash {
+            0% { background-color: rgba(0, 0, 0, 0.06); }
+            100% { background-color: transparent; }
+        }
+
+        .row-moved {
+            animation: subtleFlash 0.7s ease-out;
+        }
+    </style>
+</head>
+<body class="min-h-screen py-8 px-4 sm:px-6">
+
+    <div class="max-w-[760px] mx-auto">
+
+        <!-- Header Bar -->
+        <header class="flex items-center justify-between pb-5">
+            <div class="flex items-baseline gap-2.5">
+                <h1 class="text-[18px] font-semibold tracking-tight text-[#1D1D1F]">Classement DES</h1>
+                <span class="text-[13px] text-[#86868B] font-normal tabular-nums">R2C · 44 spécialités</span>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button id="btn-reset-modal" type="button"
+                    class="h-8 px-3 rounded-[6px] text-[13px] font-medium text-[#515154] hover:text-[#1D1D1F] hover:bg-black/[0.05] active:bg-black/[0.08] transition">
+                    Réinitialiser
+                </button>
+                <button id="btn-export-pdf" type="button"
+                    class="h-8 px-3.5 rounded-[6px] text-[13px] font-medium text-white bg-[#1D1D1F] hover:bg-[#323235] active:bg-[#000000] transition">
+                    Exporter en PDF
+                </button>
+            </div>
+        </header>
+
+        <!-- Filter & Search Bar -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-3">
+            <div class="segmented-control self-start" role="tablist">
+                <button type="button" data-filter="all" class="segment-btn active">Toutes</button>
+                <button type="button" data-filter="medical" class="segment-btn">Médecine</button>
+                <button type="button" data-filter="surgical" class="segment-btn">Chirurgie</button>
+                <button type="button" data-filter="biology" class="segment-btn">Biologie</button>
+            </div>
+
+            <div class="relative w-full sm:w-56">
+                <svg class="w-3.5 h-3.5 text-[#86868B] absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.2-5.2m1.7-4.3a6 6 0 11-12 0 6 6 0 0112 0z"></path>
+                </svg>
+                <input id="search-input" type="text" placeholder="Rechercher..."
+                    class="w-full h-[30px] pl-8 pr-7 bg-white rounded-[6px] text-[13px] text-[#1D1D1F] placeholder-[#86868B] border border-black/[0.08] focus:outline-none focus:border-[#1D1D1F] transition">
+                <kbd id="search-kbd" class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-[#AEAEB2] font-sans border border-black/[0.08] rounded px-1 leading-tight pointer-events-none">/</kbd>
+                <button id="clear-search" type="button" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-[#86868B] hover:text-[#1D1D1F]" aria-label="Effacer">
+                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Unified Inset Table Surface -->
+        <main class="table-surface">
+            <div id="specialties-list"></div>
+
+            <div id="empty-state" class="hidden py-10 text-center">
+                <p class="text-[13px] text-[#86868B]">Aucune spécialité ne correspond à votre recherche.</p>
+            </div>
+        </main>
+
+        <!-- Minimal Footer Note -->
+        <footer class="mt-3 flex items-center justify-between text-[11.5px] text-[#86868B] px-1">
+            <span>Glisser pour réordonner ou cliquer sur un rang (1–44) pour le modifier.</span>
+            <span class="tabular-nums">44 DES</span>
+        </footer>
+    </div>
+
+    <!-- Minimal Reset Confirmation Dialog -->
+    <div id="reset-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/20 backdrop-blur-[2px]">
+        <div class="bg-white rounded-[10px] max-w-[320px] w-full p-5 border border-black/10 shadow-lg">
+            <h2 class="text-[14px] font-semibold text-[#1D1D1F]">Réinitialiser l'ordre ?</h2>
+            <p class="text-[12.5px] text-[#86868B] mt-1 leading-relaxed">
+                Les 44 spécialités seront replacées par ordre alphabétique.
+            </p>
+            <div class="flex justify-end gap-2 mt-4">
+                <button id="cancel-reset-btn" type="button"
+                    class="h-7 px-3 rounded-[5px] text-[12.5px] font-medium text-[#515154] hover:bg-black/5 transition">
+                    Annuler
+                </button>
+                <button id="confirm-reset-btn" type="button"
+                    class="h-7 px-3 rounded-[5px] text-[12.5px] font-medium bg-[#1D1D1F] text-white hover:bg-[#323235] transition">
+                    Réinitialiser
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const INITIAL_SPECIALTIES = [
+            { id: "allergologie", name: "Allergologie", category: "medical", meta: "Médecine · 4 ans" },
+            { id: "anapath", name: "Anatomie et cytologie pathologiques", category: "medical", meta: "Médecine · 5 ans" },
+            { id: "anesthesie", name: "Anesthésie-réanimation", category: "medical", meta: "Médecine · 5 ans" },
+            { id: "biologie", name: "Biologie médicale", category: "biology", meta: "Biologie · 4 ans" },
+            { id: "chir-maxillo", name: "Chirurgie maxillo-faciale", category: "surgical", meta: "Chirurgie · 6 ans" },
+            { id: "chir-orale", name: "Chirurgie orale", category: "surgical", meta: "Chirurgie · 4 ans" },
+            { id: "chir-ortho", name: "Chirurgie orthopédique et traumatologique", category: "surgical", meta: "Chirurgie · 6 ans" },
+            { id: "chir-ped", name: "Chirurgie pédiatrique", category: "surgical", meta: "Chirurgie · 6 ans" },
+            { id: "chir-plastique", name: "Chirurgie plastique, reconstructrice et esthétique", category: "surgical", meta: "Chirurgie · 6 ans" },
+            { id: "chir-thoracique", name: "Chirurgie thoracique et cardiovasculaire", category: "surgical", meta: "Chirurgie · 6 ans" },
+            { id: "chir-vasculaire", name: "Chirurgie vasculaire", category: "surgical", meta: "Chirurgie · 6 ans" },
+            { id: "chir-viscerale", name: "Chirurgie viscérale et digestive", category: "surgical", meta: "Chirurgie · 6 ans" },
+            { id: "dermatologie", name: "Dermatologie et vénéréologie", category: "medical", meta: "Médecine · 4 ans" },
+            { id: "endocrinologie", name: "Endocrinologie-diabétologie-nutrition", category: "medical", meta: "Médecine · 4 ans" },
+            { id: "genetique", name: "Génétique médicale", category: "medical", meta: "Médecine · 4 ans" },
+            { id: "geriatrie", name: "Gériatrie", category: "medical", meta: "Médecine · 4 ans" },
+            { id: "gyneco-med", name: "Gynécologie médicale", category: "medical", meta: "Médecine · 4 ans" },
+            { id: "gyneco-obs", name: "Gynécologie obstétrique", category: "surgical", meta: "Chirurgie · 6 ans" },
+            { id: "hematologie", name: "Hématologie", category: "medical", meta: "Médecine · 5 ans" },
+            { id: "hge", name: "Hépato-gastro-entérologie", category: "medical", meta: "Médecine · 4 ans" },
+            { id: "infectiologie", name: "Maladies infectieuses et tropicales", category: "medical", meta: "Médecine · 5 ans" },
+            { id: "cardio", name: "Médecine cardiovasculaire", category: "medical", meta: "Médecine · 4 ans" },
+            { id: "urgences", name: "Médecine d'urgence", category: "medical", meta: "Médecine · 4 ans" },
+            { id: "med-travail", name: "Médecine et santé au travail", category: "medical", meta: "Médecine · 4 ans" },
+            { id: "med-generale", name: "Médecine générale", category: "medical", meta: "Médecine · 4 ans" },
+            { id: "mir", name: "Médecine intensive-réanimation", category: "medical", meta: "Médecine · 5 ans" },
+            { id: "med-interne", name: "Médecine interne et immunologie clinique", category: "medical", meta: "Médecine · 5 ans" },
+            { id: "med-legale", name: "Médecine légale et expertises médicales", category: "medical", meta: "Médecine · 4 ans" },
+            { id: "med-nucleaire", name: "Médecine nucléaire", category: "medical", meta: "Médecine · 4 ans" },
+            { id: "mpr", name: "Médecine physique et de réadaptation", category: "medical", meta: "Médecine · 4 ans" },
+            { id: "med-vasculaire", name: "Médecine vasculaire", category: "medical", meta: "Médecine · 4 ans" },
+            { id: "nephrologie", name: "Néphrologie", category: "medical", meta: "Médecine · 4 ans" },
+            { id: "neurochir", name: "Neurochirurgie", category: "surgical", meta: "Chirurgie · 6 ans" },
+            { id: "neurologie", name: "Neurologie", category: "medical", meta: "Médecine · 4 ans" },
+            { id: "oncologie", name: "Oncologie", category: "medical", meta: "Médecine · 5 ans" },
+            { id: "ophtalmo", name: "Ophtalmologie", category: "surgical", meta: "Chirurgie · 6 ans" },
+            { id: "orl", name: "Oto-rhino-laryngologie - chirurgie cervico-faciale", category: "surgical", meta: "Chirurgie · 6 ans" },
+            { id: "pediatrie", name: "Pédiatrie", category: "medical", meta: "Médecine · 5 ans" },
+            { id: "pneumologie", name: "Pneumologie", category: "medical", meta: "Médecine · 4 ans" },
+            { id: "psychiatrie", name: "Psychiatrie", category: "medical", meta: "Médecine · 4 ans" },
+            { id: "radiologie", name: "Radiologie et imagerie médicale", category: "medical", meta: "Médecine · 5 ans" },
+            { id: "rhumatologie", name: "Rhumatologie", category: "medical", meta: "Médecine · 4 ans" },
+            { id: "sante-publique", name: "Santé publique", category: "medical", meta: "Médecine · 4 ans" },
+            { id: "urologie", name: "Urologie", category: "surgical", meta: "Chirurgie · 6 ans" }
+        ];
+
+        const STORAGE_KEY = "des_ranking_france_v1";
+
+        let specialties = [];
+        let activeCategory = "all";
+        let searchQuery = "";
+        let lastMovedId = null;
+
+        function getAlphabeticalDefault() {
+            return [...INITIAL_SPECIALTIES].sort((a, b) => a.name.localeCompare(b.name, "fr"));
+        }
+
+        function loadState() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    const ids = JSON.parse(raw);
+                    if (Array.isArray(ids) && ids.length === INITIAL_SPECIALTIES.length) {
+                        const byId = new Map(INITIAL_SPECIALTIES.map(s => [s.id, s]));
+                        const ordered = ids.map(id => byId.get(id)).filter(Boolean);
+                        if (ordered.length === INITIAL_SPECIALTIES.length) {
+                            specialties = ordered;
+                            return;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn("Storage read error:", e);
+            }
+            specialties = getAlphabeticalDefault();
+        }
+
+        function saveState() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(specialties.map(s => s.id)));
+            } catch (e) {
+                console.warn("Storage write error:", e);
+            }
+        }
+
+        function normalizeStr(str) {
+            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        }
+
+        function formatRank(rank) {
+            return String(rank).padStart(2, "0");
+        }
+
+        function renderList() {
+            const listEl = document.getElementById("specialties-list");
+            const emptyEl = document.getElementById("empty-state");
+            const q = normalizeStr(searchQuery.trim());
+
+            listEl.innerHTML = "";
+            let visibleCount = 0;
+
+            specialties.forEach((item, index) => {
+                const rank = index + 1;
+                const matchesCategory = activeCategory === "all" || item.category === activeCategory;
+                const matchesSearch = !q ||
+                    normalizeStr(item.name).includes(q) ||
+                    normalizeStr(item.meta).includes(q);
+
+                const isVisible = matchesCategory && matchesSearch;
+                if (isVisible) visibleCount++;
+
+                const row = document.createElement("div");
+                row.dataset.id = item.id;
+                row.className = `des-row ${isVisible ? "" : "hidden"} ${lastMovedId === item.id ? "row-moved" : ""}`;
+
+                row.innerHTML = `
+                    <div class="flex items-center gap-2.5 min-w-0 flex-1 pr-3">
+                        <button type="button" class="drag-handle grip-icon cursor-grab active:cursor-grabbing p-1 -ml-1 shrink-0" aria-label="Déplacer">
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+                                <line x1="2" y1="4.2" x2="10" y2="4.2"></line>
+                                <line x1="2" y1="7.8" x2="10" y2="7.8"></line>
+                            </svg>
+                        </button>
+
+                        <input
+                            type="text"
+                            inputmode="numeric"
+                            value="${formatRank(rank)}"
+                            data-rank-input="${item.id}"
+                            data-current-rank="${rank}"
+                            aria-label="Rang de ${item.name}"
+                            title="Cliquer pour saisir un rang (1–44)"
+                            class="rank-input shrink-0"
+                        />
+
+                        <span class="text-[14px] font-medium text-[#1D1D1F] truncate">${item.name}</span>
+                    </div>
+
+                    <div class="flex items-center gap-3 shrink-0">
+                        <div class="row-actions flex items-center gap-0.5">
+                            <button type="button" data-action="top" data-id="${item.id}" ${rank === 1 ? "disabled" : ""}
+                                class="p-1 rounded text-[#86868B] hover:text-[#1D1D1F] hover:bg-black/5 disabled:opacity-25 disabled:pointer-events-none"
+                                title="Placer en 1er">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 11l7-7 7 7M5 19l7-7 7 7"></path>
+                                </svg>
+                            </button>
+                            <button type="button" data-action="up" data-id="${item.id}" ${rank === 1 ? "disabled" : ""}
+                                class="p-1 rounded text-[#86868B] hover:text-[#1D1D1F] hover:bg-black/5 disabled:opacity-25 disabled:pointer-events-none"
+                                title="Monter">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"></path>
+                                </svg>
+                            </button>
+                            <button type="button" data-action="down" data-id="${item.id}" ${rank === 44 ? "disabled" : ""}
+                                class="p-1 rounded text-[#86868B] hover:text-[#1D1D1F] hover:bg-black/5 disabled:opacity-25 disabled:pointer-events-none"
+                                title="Descendre">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <button type="button" data-action="bottom" data-id="${item.id}" ${rank === 44 ? "disabled" : ""}
+                                class="p-1 rounded text-[#86868B] hover:text-[#1D1D1F] hover:bg-black/5 disabled:opacity-25 disabled:pointer-events-none"
+                                title="Placer en 44e">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 13l-7 7-7-7m14-8l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <span class="text-[12.5px] text-[#86868B] tabular-nums w-[112px] text-right hidden sm:inline-block">${item.meta}</span>
+                    </div>
+                `;
+
+                listEl.appendChild(row);
+            });
+
+            emptyEl.classList.toggle("hidden", visibleCount > 0);
+        }
+
+        function moveSpecialtyToRank(id, targetRankOneBased) {
+            const currentIndex = specialties.findIndex(s => s.id === id);
+            if (currentIndex === -1) return;
+
+            const clampedRank = Math.max(1, Math.min(specialties.length, targetRankOneBased));
+            const targetIndex = clampedRank - 1;
+
+            if (currentIndex === targetIndex) {
+                renderList();
+                return;
+            }
+
+            const [moved] = specialties.splice(currentIndex, 1);
+            specialties.splice(targetIndex, 0, moved);
+
+            lastMovedId = id;
+            renderList();
+            saveState();
+
+            const rowEl = document.querySelector(`[data-id="${id}"]`);
+            if (rowEl && !rowEl.classList.contains("hidden")) {
+                const rect = rowEl.getBoundingClientRect();
+                if (rect.top < 40 || rect.bottom > window.innerHeight - 40) {
+                    rowEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                }
+            }
+        }
+
+        function initSortable() {
+            const listEl = document.getElementById("specialties-list");
+            new Sortable(listEl, {
+                animation: 150,
+                easing: "cubic-bezier(0.25, 1, 0.5, 1)",
+                ghostClass: "sortable-ghost",
+                dragClass: "sortable-drag",
+                filter: "input, button:not(.drag-handle)",
+                preventOnFilter: false,
+                onEnd: function (evt) {
+                    if (evt.oldIndex === evt.newIndex) return;
+                    const domIds = Array.from(listEl.children).map(el => el.dataset.id);
+                    const byId = new Map(specialties.map(s => [s.id, s]));
+                    specialties = domIds.map(id => byId.get(id)).filter(Boolean);
+                    lastMovedId = evt.item.dataset.id;
+                    renderList();
+                    saveState();
+                }
+            });
+        }
+
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({
+                orientation: "portrait",
+                unit: "mm",
+                format: "a4"
+            });
+
+            const pageWidth = 210;
+            const marginX = 15;
+            const contentWidth = pageWidth - marginX * 2;
+            const now = new Date();
+            const dateStr = now.toLocaleDateString("fr-FR", {
+                day: "2-digit",
+                month: "long",
+                year: "numeric"
+            });
+
+            // Editorial Header
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(12);
+            doc.setTextColor(29, 29, 31);
+            doc.text("Classement DES — R2C", marginX, 18);
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(9);
+            doc.setTextColor(134, 134, 139);
+            doc.text(dateStr, pageWidth - marginX, 18, { align: "right" });
+
+            // Crisp Top Rule
+            doc.setDrawColor(29, 29, 31);
+            doc.setLineWidth(0.35);
+            doc.line(marginX, 21.5, pageWidth - marginX, 21.5);
+
+            // Two-column layout (1-22 left, 23-44 right)
+            const colGap = 8;
+            const colWidth = (contentWidth - colGap) / 2;
+            const startY = 28;
+            const rowHeight = 11.2;
+
+            specialties.forEach((item, index) => {
+                const rank = index + 1;
+                const isLeft = index < 22;
+                const rowIdx = isLeft ? index : index - 22;
+                const x = isLeft ? marginX : marginX + colWidth + colGap;
+                const y = startY + rowIdx * rowHeight;
+
+                // Hairline row divider
+                doc.setDrawColor(230, 230, 235);
+                doc.setLineWidth(0.2);
+                doc.line(x, y + rowHeight - 2.2, x + colWidth, y + rowHeight - 2.2);
+
+                // Tabular Rank
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(8.5);
+                doc.setTextColor(29, 29, 31);
+                doc.text(formatRank(rank), x, y + 5);
+
+                // Category & Duration on right side of column
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(7.5);
+                doc.setTextColor(134, 134, 139);
+                doc.text(item.meta, x + colWidth, y + 5, { align: "right" });
+
+                // Specialty Name
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(8.8);
+                doc.setTextColor(29, 29, 31);
+
+                const metaWidth = doc.getTextWidth(item.meta);
+                const maxNameWidth = colWidth - 8 - metaWidth - 3;
+                let displayName = item.name;
+                while (doc.getTextWidth(displayName) > maxNameWidth && displayName.length > 8) {
+                    displayName = displayName.slice(0, -2) + "…";
+                }
+                doc.text(displayName, x + 7.5, y + 5);
+            });
+
+            const isoDate = now.toISOString().slice(0, 10);
+            doc.save(`Classement-DES-R2C-${isoDate}.pdf`);
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            loadState();
+            renderList();
+            initSortable();
+
+            const listEl = document.getElementById("specialties-list");
+
+            // Row quick-move buttons
+            listEl.addEventListener("click", (e) => {
+                const btn = e.target.closest("button[data-action]");
+                if (!btn) return;
+                const id = btn.dataset.id;
+                const action = btn.dataset.action;
+                const idx = specialties.findIndex(s => s.id === id);
+                if (idx === -1) return;
+
+                if (action === "top") moveSpecialtyToRank(id, 1);
+                else if (action === "up") moveSpecialtyToRank(id, idx);
+                else if (action === "down") moveSpecialtyToRank(id, idx + 2);
+                else if (action === "bottom") moveSpecialtyToRank(id, specialties.length);
+            });
+
+            // Direct rank input editing
+            listEl.addEventListener("focusin", (e) => {
+                if (e.target.matches("input[data-rank-input]")) {
+                    e.target.value = e.target.dataset.currentRank;
+                    e.target.select();
+                }
+            });
+
+            listEl.addEventListener("keydown", (e) => {
+                if (e.target.matches("input[data-rank-input]")) {
+                    if (e.key === "Enter") {
+                        e.preventDefault();
+                        e.target.blur();
+                    } else if (e.key === "Escape") {
+                        e.target.value = formatRank(e.target.dataset.currentRank);
+                        e.target.blur();
+                    }
+                }
+            });
+
+            listEl.addEventListener("focusout", (e) => {
+                if (e.target.matches("input[data-rank-input]")) {
+                    const id = e.target.dataset.rankInput;
+                    const currentRank = parseInt(e.target.dataset.currentRank, 10);
+                    const parsed = parseInt(e.target.value, 10);
+                    if (!isNaN(parsed) && parsed !== currentRank) {
+                        moveSpecialtyToRank(id, parsed);
+                    } else {
+                        e.target.value = formatRank(currentRank);
+                    }
+                }
+            });
+
+            // Segmented control filters
+            const filterBtns = document.querySelectorAll("button[data-filter]");
+            filterBtns.forEach(btn => {
+                btn.addEventListener("click", () => {
+                    filterBtns.forEach(b => b.classList.remove("active"));
+                    btn.classList.add("active");
+                    activeCategory = btn.dataset.filter;
+                    lastMovedId = null;
+                    renderList();
+                });
+            });
+
+            // Search input & "/" shortcut
+            const searchInput = document.getElementById("search-input");
+            const clearSearch = document.getElementById("clear-search");
+            const searchKbd = document.getElementById("search-kbd");
+
+            function updateSearchUI() {
+                const hasText = searchQuery.length > 0;
+                clearSearch.classList.toggle("hidden", !hasText);
+                searchKbd.classList.toggle("hidden", hasText);
+            }
+
+            searchInput.addEventListener("input", (e) => {
+                searchQuery = e.target.value;
+                lastMovedId = null;
+                updateSearchUI();
+                renderList();
+            });
+
+            clearSearch.addEventListener("click", () => {
+                searchQuery = "";
+                searchInput.value = "";
+                updateSearchUI();
+                renderList();
+            });
+
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "/" && document.activeElement !== searchInput && !document.activeElement.matches("input")) {
+                    e.preventDefault();
+                    searchInput.focus();
+                }
+            });
+
+            // Reset confirmation modal
+            const resetModal = document.getElementById("reset-modal");
+            document.getElementById("btn-reset-modal").addEventListener("click", () => {
+                resetModal.classList.remove("hidden");
+                resetModal.classList.add("flex");
+            });
+
+            document.getElementById("cancel-reset-btn").addEventListener("click", () => {
+                resetModal.classList.add("hidden");
+                resetModal.classList.remove("flex");
+            });
+
+            document.getElementById("confirm-reset-btn").addEventListener("click", () => {
+                specialties = getAlphabeticalDefault();
+                lastMovedId = null;
+                renderList();
+                saveState();
+                resetModal.classList.add("hidden");
+                resetModal.classList.remove("flex");
+            });
+
+            document.getElementById("btn-export-pdf").addEventListener("click", exportToPDF);
+        });
+    </script>
+</body>
+</html>
