@@ -1,0 +1,2274 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classement DES — R2C</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-page: #F5F5F7;
+            --bg-surface: #FFFFFF;
+            --text-primary: #1D1D1F;
+            --text-secondary: #86868B;
+            --text-muted: #AEAEB2;
+            --border-outer: rgba(0, 0, 0, 0.08);
+            --border-hairline: rgba(0, 0, 0, 0.06);
+            --row-hover: #FAFAFC;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-page);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
+            letter-spacing: -0.015em;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            margin: 0;
+            padding: 0;
+        }
+
+        .tabular-nums {
+            font-variant-numeric: tabular-nums;
+        }
+
+        .table-surface {
+            background: var(--bg-surface);
+            border-radius: 10px;
+            border: 1px solid var(--border-outer);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+            overflow: hidden;
+        }
+
+        .des-row {
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 14px;
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-hairline);
+            transition: background-color 0.1s ease;
+            user-select: none;
+        }
+
+        .des-row:last-child {
+            border-bottom: none;
+        }
+
+        .des-row:hover {
+            background-color: var(--row-hover);
+        }
+
+        .des-row .row-actions {
+            opacity: 0;
+            transition: opacity 0.12s ease;
+        }
+
+        .des-row:hover .row-actions,
+        .des-row:focus-within .row-actions {
+            opacity: 1;
+        }
+
+        @media (hover: none) {
+            .des-row .row-actions {
+                opacity: 1;
+            }
+        }
+
+        .grip-icon {
+            color: #C7C7CC;
+            transition: color 0.12s ease;
+        }
+
+        .des-row:hover .grip-icon {
+            color: #86868B;
+        }
+
+        .sortable-ghost {
+            background-color: #F5F5F7 !important;
+            color: transparent !important;
+        }
+
+        .sortable-ghost * {
+            opacity: 0;
+        }
+
+        .sortable-drag {
+            background-color: #FFFFFF !important;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.08) !important;
+            border-radius: 6px;
+            z-index: 50;
+        }
+
+        .segmented-control {
+            display: inline-flex;
+            background: rgba(118, 118, 128, 0.11);
+            padding: 2px;
+            border-radius: 7px;
+        }
+
+        .segment-btn {
+            font-size: 12.5px;
+            font-weight: 500;
+            color: #515154;
+            padding: 4px 11px;
+            border-radius: 5.5px;
+            transition: all 0.12s ease;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .segment-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .segment-btn.active {
+            background: #FFFFFF;
+            color: var(--text-primary);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 0 0 0.5px rgba(0, 0, 0, 0.04);
+        }
+
+        .rank-input {
+            width: 32px;
+            height: 24px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            text-align: right;
+            padding-right: 4px;
+            font-variant-numeric: tabular-nums;
+            transition: border-color 0.12s ease, background-color 0.12s ease;
+        }
+
+        .rank-input:hover {
+            background: rgba(0, 0, 0, 0.04);
+        }
+
+        .rank-input:focus {
+            outline: none;
+            background: #FFFFFF;
+            border-color: #1D1D1F;
+            text-align: center;
+            padding-right: 0;
+        }
+
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        @keyframes subtleFlash {
+            0% { background-color: rgba(0, 0, 0, 0.06); }
+            100% { background-color: transparent; }
+        }
+
+        .row-moved {
+            animation: subtleFlash 0.7s ease-out;
+        }
+
+        .macos-field {
+            background: #FFFFFF;
+            border: 1px solid #D2D2D7;
+            border-radius: 6px;
+            height: 30px;
+            transition: border-color 0.12s ease, box-shadow 0.12s ease;
+        }
+
+        .macos-field:focus-within {
+            border-color: #1D1D1F;
+            box-shadow: 0 0 0 2px rgba(29, 29, 31, 0.08);
+        }
+
+        /* ===== THEME SYSTEM ===== */
+        :root {
+            --bg-page: #F5F5F7;
+            --bg-surface: #FFFFFF;
+            --text-primary: #1D1D1F;
+            --text-secondary: #86868B;
+            --text-muted: #AEAEB2;
+            --border-outer: rgba(0, 0, 0, 0.08);
+            --border-hairline: rgba(0, 0, 0, 0.06);
+            --row-hover: #FAFAFC;
+            --bg-hover: rgba(0, 0, 0, 0.05);
+            --bg-active: rgba(0, 0, 0, 0.08);
+            --segment-bg: rgba(118, 118, 128, 0.11);
+            --kbd-border: rgba(0, 0, 0, 0.08);
+            --shadow-color: rgba(0, 0, 0, 0.03);
+            --zebra: #FAFAFC;
+            --ghost-bg: #F5F5F7;
+            --drag-shadow: rgba(0, 0, 0, 0.12);
+            --modal-overlay: rgba(0, 0, 0, 0.2);
+            --preview-overlay: rgba(0, 0, 0, 0.4);
+            --preview-bg: #E5E5EA;
+            --input-focus-border: #1D1D1F;
+            --input-focus-shadow: rgba(29, 29, 31, 0.08);
+            --btn-dark-bg: #1D1D1F;
+            --btn-dark-hover: #323235;
+            --btn-dark-active: #000000;
+            --btn-light-bg: #FFFFFF;
+            --btn-light-border: #D2D2D7;
+            --btn-light-hover: #FAFAFC;
+            --btn-light-active: #F0F0F2;
+            --badge-bg: #1D1D1F;
+            --badge-text: #FFFFFF;
+            --badge-pill-bg: #F5F5F7;
+            --badge-pill-border: #C7C7CC;
+            --grip: #C7C7CC;
+            --grip-hover: #86868B;
+            --search-icon: #86868B;
+            --clear-btn: #86868B;
+            --clear-btn-hover: #1D1D1F;
+            --flash-bg: rgba(0, 0, 0, 0.06);
+            --macos-field-bg: #FFFFFF;
+            --macos-field-border: #D2D2D7;
+            --macos-field-focus-border: #1D1D1F;
+            --macos-field-focus-shadow: rgba(29, 29, 31, 0.08);
+            --pseudo-border: rgba(0, 0, 0, 0.07);
+            --placeholder: #AEAEB2;
+            --title-color: #1D1D1F;
+            --subtitle: #86868B;
+            --footer-text: #86868B;
+            --empty-text: #86868B;
+            --modal-bg: #FFFFFF;
+            --modal-border: rgba(0, 0, 0, 0.1);
+            --modal-shadow: rgba(0, 0, 0, 0.15);
+            --modal-title: #1D1D1F;
+            --modal-text: #86868B;
+            --modal-btn-text: #515154;
+            --modal-btn-hover: rgba(0, 0, 0, 0.05);
+            --modal-btn-confirm-bg: #1D1D1F;
+            --modal-btn-confirm-text: #FFFFFF;
+            --modal-btn-confirm-hover: #323235;
+            --preview-header-bg: #FFFFFF;
+            --preview-header-border: rgba(0, 0, 0, 0.08);
+            --preview-title: #1D1D1F;
+            --preview-subtitle: #86868B;
+            --preview-btn-text: #515154;
+            --preview-btn-hover: rgba(0, 0, 0, 0.05);
+            --preview-btn-primary-bg: #1D1D1F;
+            --preview-btn-primary-text: #FFFFFF;
+            --preview-btn-primary-hover: #323235;
+            --preview-img-bg: #FFFFFF;
+            --preview-img-border: rgba(0, 0, 0, 0.1);
+            --preview-img-shadow: rgba(0, 0, 0, 0.1);
+            --row-actions-text: #86868B;
+            --row-actions-hover-text: #1D1D1F;
+            --row-actions-hover-bg: rgba(0, 0, 0, 0.05);
+            --row-actions-disabled: rgba(0, 0, 0, 0.25);
+            --rank-input-text: #1D1D1F;
+            --rank-input-hover: rgba(0, 0, 0, 0.04);
+            --rank-input-focus-bg: #FFFFFF;
+            --rank-input-focus-border: #1D1D1F;
+            --specialty-name: #1D1D1F;
+            --meta-text: #86868B;
+            --segment-btn-text: #515154;
+            --segment-btn-hover: #1D1D1F;
+            --segment-btn-active-bg: #FFFFFF;
+            --segment-btn-active-text: #1D1D1F;
+            --segment-btn-active-shadow: rgba(0, 0, 0, 0.08);
+            --segment-btn-active-border: rgba(0, 0, 0, 0.04);
+            --header-title: #1D1D1F;
+            --header-subtitle: #86868B;
+            --btn-reset-text: #515154;
+            --btn-reset-hover-text: #1D1D1F;
+            --btn-reset-hover-bg: rgba(0, 0, 0, 0.05);
+            --btn-reset-active-bg: rgba(0, 0, 0, 0.08);
+            --btn-preview-text: #1D1D1F;
+            --btn-preview-bg: #FFFFFF;
+            --btn-preview-border: #D2D2D7;
+            --btn-preview-hover: #FAFAFC;
+            --btn-preview-active: #F0F0F2;
+            --btn-export-text: #FFFFFF;
+            --btn-export-bg: #1D1D1F;
+            --btn-export-hover: #323235;
+            --btn-export-active: #000000;
+            --table-surface-bg: #FFFFFF;
+            --table-surface-border: rgba(0, 0, 0, 0.08);
+            --table-surface-shadow: rgba(0, 0, 0, 0.03);
+            --des-row-bg: #FFFFFF;
+            --des-row-border: rgba(0, 0, 0, 0.06);
+            --des-row-hover: #FAFAFC;
+            --grip-icon: #C7C7CC;
+            --grip-icon-hover: #86868B;
+            --sortable-ghost-bg: #F5F5F7;
+            --sortable-drag-bg: #FFFFFF;
+            --sortable-drag-shadow: rgba(0, 0, 0, 0.12);
+            --sortable-drag-border: rgba(0, 0, 0, 0.08);
+            --macos-field-bg: #FFFFFF;
+            --macos-field-border: #D2D2D7;
+            --macos-field-focus-border: #1D1D1F;
+            --macos-field-focus-shadow: rgba(29, 29, 31, 0.08);
+            --pseudo-label: #86868B;
+            --pseudo-border: rgba(0, 0, 0, 0.07);
+            --search-placeholder: #86868B;
+            --search-icon: #86868B;
+            --search-kbd: #AEAEB2;
+            --search-kbd-border: rgba(0, 0, 0, 0.08);
+            --clear-search: #86868B;
+            --clear-search-hover: #1D1D1F;
+            --empty-state-text: #86868B;
+            --footer-text: #86868B;
+            --reset-modal-bg: #FFFFFF;
+            --reset-modal-border: rgba(0, 0, 0, 0.1);
+            --reset-modal-shadow: rgba(0, 0, 0, 0.15);
+            --reset-modal-title: #1D1D1F;
+            --reset-modal-text: #86868B;
+            --reset-modal-btn-text: #515154;
+            --reset-modal-btn-hover: rgba(0, 0, 0, 0.05);
+            --reset-modal-btn-confirm-bg: #1D1D1F;
+            --reset-modal-btn-confirm-text: #FFFFFF;
+            --reset-modal-btn-confirm-hover: #323235;
+            --pdf-preview-modal-bg: #F5F5F7;
+            --pdf-preview-modal-border: rgba(0, 0, 0, 0.15);
+            --pdf-preview-modal-shadow: rgba(0, 0, 0, 0.2);
+            --pdf-preview-header-bg: #FFFFFF;
+            --pdf-preview-header-border: rgba(0, 0, 0, 0.08);
+            --pdf-preview-title: #1D1D1F;
+            --pdf-preview-subtitle: #86868B;
+            --pdf-preview-btn-text: #515154;
+            --pdf-preview-btn-hover: rgba(0, 0, 0, 0.05);
+            --pdf-preview-btn-primary-bg: #1D1D1F;
+            --pdf-preview-btn-primary-text: #FFFFFF;
+            --pdf-preview-btn-primary-hover: #323235;
+            --pdf-preview-img-bg: #FFFFFF;
+            --pdf-preview-img-border: rgba(0, 0, 0, 0.1);
+            --pdf-preview-img-shadow: rgba(0, 0, 0, 0.1);
+            --pdf-preview-container-bg: #E5E5EA;
+            --stat-bar-bg: #E5E5EA;
+            --stat-bar-fill: #1D1D1F;
+            --stat-label: #86888B;
+            --stat-value: #1D1D1F;
+            --undo-redo-text: #515154;
+            --undo-redo-hover-text: #1D1D1F;
+            --undo-redo-hover-bg: rgba(0, 0, 0, 0.05);
+            --undo-redo-disabled: rgba(0, 0, 0, 0.25);
+            --theme-toggle-text: #515154;
+            --theme-toggle-hover-text: #1D1D1F;
+            --theme-toggle-hover-bg: rgba(0, 0, 0, 0.05);
+        }
+
+        [data-theme="dark"] {
+            --bg-page: #000000;
+            --bg-surface: #1C1C1E;
+            --text-primary: #F5F5F7;
+            --text-secondary: #98989D;
+            --text-muted: #636366;
+            --border-outer: rgba(255, 255, 255, 0.1);
+            --border-hairline: rgba(255, 255, 255, 0.08);
+            --row-hover: #2C2C2E;
+            --bg-hover: rgba(255, 255, 255, 0.05);
+            --bg-active: rgba(255, 255, 255, 0.08);
+            --segment-bg: rgba(118, 118, 128, 0.2);
+            --kbd-border: rgba(255, 255, 255, 0.1);
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --zebra: #2C2C2E;
+            --ghost-bg: #1C1C1E;
+            --drag-shadow: rgba(0, 0, 0, 0.4);
+            --modal-overlay: rgba(0, 0, 0, 0.5);
+            --preview-overlay: rgba(0, 0, 0, 0.6);
+            --preview-bg: #3A3A3C;
+            --input-focus-border: #F5F5F7;
+            --input-focus-shadow: rgba(245, 245, 247, 0.1);
+            --btn-dark-bg: #F5F5F7;
+            --btn-dark-hover: #FFFFFF;
+            --btn-dark-active: #D2D2D7;
+            --btn-light-bg: #2C2C2E;
+            --btn-light-border: #48484A;
+            --btn-light-hover: #3A3A3C;
+            --btn-light-active: #1C1C1E;
+            --badge-bg: #F5F5F7;
+            --badge-text: #000000;
+            --badge-pill-bg: #2C2C2E;
+            --badge-pill-border: #48484A;
+            --grip: #48484A;
+            --grip-hover: #98989D;
+            --search-icon: #98989D;
+            --clear-btn: #98989D;
+            --clear-btn-hover: #F5F5F7;
+            --flash-bg: rgba(255, 255, 255, 0.06);
+            --macos-field-bg: #1C1C1E;
+            --macos-field-border: #48484A;
+            --macos-field-focus-border: #F5F5F7;
+            --macos-field-focus-shadow: rgba(245, 245, 247, 0.1);
+            --pseudo-border: rgba(255, 255, 255, 0.1);
+            --placeholder: #636366;
+            --title-color: #F5F5F7;
+            --subtitle: #98989D;
+            --footer-text: #98989D;
+            --empty-text: #98989D;
+            --modal-bg: #1C1C1E;
+            --modal-border: rgba(255, 255, 255, 0.1);
+            --modal-shadow: rgba(0, 0, 0, 0.5);
+            --modal-title: #F5F5F7;
+            --modal-text: #F5F5F7;
+            --modal-text-secondary: #98989D;
+            --modal-bg-secondary: #2C2C2E;
+            --modal-badge-bg: #F5F5F7;
+            --modal-badge-text: #000000;
+            --modal-btn-bg: #2C2C2E;
+            --modal-btn-border: #48484A;
+            --modal-btn-text: #F5F5F7;
+            --modal-btn-hover: #3A3A3C;
+            --modal-link: #007AFF;
+            --modal-btn-confirm-bg: #F5F5F7;
+            --modal-btn-confirm-text: #000000;
+            --modal-btn-confirm-hover: #FFFFFF;
+            --preview-header-bg: #1C1C1E;
+            --preview-header-border: rgba(255, 255, 255, 0.1);
+            --preview-title: #F5F5F7;
+            --preview-subtitle: #98989D;
+            --preview-btn-text: #98989D;
+            --preview-btn-hover: rgba(255, 255, 255, 0.05);
+            --preview-btn-primary-bg: #F5F5F7;
+            --preview-btn-primary-text: #000000;
+            --preview-btn-primary-hover: #FFFFFF;
+            --preview-img-bg: #FFFFFF;
+            --preview-img-border: rgba(255, 255, 255, 0.1);
+            --preview-img-shadow: rgba(0, 0, 0, 0.3);
+            --row-actions-text: #98989D;
+            --row-actions-hover-text: #F5F5F7;
+            --row-actions-hover-bg: rgba(255, 255, 255, 0.05);
+            --row-actions-disabled: rgba(255, 255, 255, 0.25);
+            --rank-input-text: #F5F5F7;
+            --rank-input-hover: rgba(255, 255, 255, 0.04);
+            --rank-input-focus-bg: #1C1C1E;
+            --rank-input-focus-border: #F5F5F7;
+            --specialty-name: #F5F5F7;
+            --meta-text: #98989D;
+            --segment-btn-text: #98989D;
+            --segment-btn-hover: #F5F5F7;
+            --segment-btn-active-bg: #2C2C2E;
+            --segment-btn-active-text: #F5F5F7;
+            --segment-btn-active-shadow: rgba(0, 0, 0, 0.3);
+            --segment-btn-active-border: rgba(255, 255, 255, 0.1);
+            --header-title: #F5F5F7;
+            --header-subtitle: #98989D;
+            --btn-reset-text: #98989D;
+            --btn-reset-hover-text: #F5F5F7;
+            --btn-reset-hover-bg: rgba(255, 255, 255, 0.05);
+            --btn-reset-active-bg: rgba(255, 255, 255, 0.08);
+            --btn-preview-text: #F5F5F7;
+            --btn-preview-bg: #2C2C2E;
+            --btn-preview-border: #48484A;
+            --btn-preview-hover: #3A3A3C;
+            --btn-preview-active: #1C1C1E;
+            --btn-export-text: #000000;
+            --btn-export-bg: #F5F5F7;
+            --btn-export-hover: #FFFFFF;
+            --btn-export-active: #D2D2D7;
+            --table-surface-bg: #1C1C1E;
+            --table-surface-border: rgba(255, 255, 255, 0.1);
+            --table-surface-shadow: rgba(0, 0, 0, 0.3);
+            --des-row-bg: #1C1C1E;
+            --des-row-border: rgba(255, 255, 255, 0.08);
+            --des-row-hover: #2C2C2E;
+            --grip-icon: #48484A;
+            --grip-icon-hover: #98989D;
+            --sortable-ghost-bg: #1C1C1E;
+            --sortable-drag-bg: #2C2C2E;
+            --sortable-drag-shadow: rgba(0, 0, 0, 0.4);
+            --sortable-drag-border: rgba(255, 255, 255, 0.1);
+            --macos-field-bg: #1C1C1E;
+            --macos-field-border: #48484A;
+            --macos-field-focus-border: #F5F5F7;
+            --macos-field-focus-shadow: rgba(245, 245, 247, 0.1);
+            --pseudo-label: #98989D;
+            --pseudo-border: rgba(255, 255, 255, 0.1);
+            --search-placeholder: #98989D;
+            --search-icon: #98989D;
+            --search-kbd: #636366;
+            --search-kbd-border: rgba(255, 255, 255, 0.1);
+            --clear-search: #98989D;
+            --clear-search-hover: #F5F5F7;
+            --empty-state-text: #98989D;
+            --footer-text: #98989D;
+            --reset-modal-bg: #1C1C1E;
+            --reset-modal-border: rgba(255, 255, 255, 0.1);
+            --reset-modal-shadow: rgba(0, 0, 0, 0.5);
+            --reset-modal-title: #F5F5F7;
+            --reset-modal-text: #98989D;
+            --reset-modal-btn-text: #98989D;
+            --reset-modal-btn-hover: rgba(255, 255, 255, 0.05);
+            --reset-modal-btn-confirm-bg: #F5F5F7;
+            --reset-modal-btn-confirm-text: #000000;
+            --reset-modal-btn-confirm-hover: #FFFFFF;
+            --pdf-preview-modal-bg: #1C1C1E;
+            --pdf-preview-modal-border: rgba(255, 255, 255, 0.15);
+            --pdf-preview-modal-shadow: rgba(0, 0, 0, 0.5);
+            --pdf-preview-header-bg: #1C1C1E;
+            --pdf-preview-header-border: rgba(255, 255, 255, 0.1);
+            --pdf-preview-title: #F5F5F7;
+            --pdf-preview-subtitle: #98989D;
+            --pdf-preview-btn-text: #98989D;
+            --pdf-preview-btn-hover: rgba(255, 255, 255, 0.05);
+            --pdf-preview-btn-primary-bg: #F5F5F7;
+            --pdf-preview-btn-primary-text: #000000;
+            --pdf-preview-btn-primary-hover: #FFFFFF;
+            --pdf-preview-img-bg: #FFFFFF;
+            --pdf-preview-img-border: rgba(255, 255, 255, 0.1);
+            --pdf-preview-img-shadow: rgba(0, 0, 0, 0.3);
+            --pdf-preview-container-bg: #3A3A3C;
+            --stat-bar-bg: #3A3A3C;
+            --stat-bar-fill: #F5F5F7;
+            --stat-label: #98989D;
+            --stat-value: #F5F5F7;
+            --undo-redo-text: #98989D;
+            --undo-redo-hover-text: #F5F5F7;
+            --undo-redo-hover-bg: rgba(255, 255, 255, 0.05);
+            --undo-redo-disabled: rgba(255, 255, 255, 0.25);
+            --theme-toggle-text: #98989D;
+            --theme-toggle-hover-text: #F5F5F7;
+            --theme-toggle-hover-bg: rgba(255, 255, 255, 0.05);
+            --modal-bg: #FFFFFF;
+            --modal-border: rgba(0, 0, 0, 0.1);
+            --modal-text: #1D1D1F;
+            --modal-text-secondary: #86868B;
+            --modal-bg-secondary: #F5F5F7;
+            --modal-badge-bg: #1D1D1F;
+            --modal-badge-text: #FFFFFF;
+            --modal-btn-bg: #FFFFFF;
+            --modal-btn-border: #D2D2D7;
+            --modal-btn-text: #1D1D1F;
+            --modal-btn-hover: #FAFAFC;
+            --modal-link: #007AFF;
+        }
+
+        /* Theme transition */
+        body, .table-surface, .des-row, .macos-field, .segmented-control,
+        .segment-btn, .rank-input, button, input, .modal, .preview-modal {
+            transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        /* ===== STATS PANEL ===== */
+        .stats-panel {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-outer);
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin-bottom: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px 24px;
+            align-items: center;
+            box-shadow: 0 1px 2px var(--shadow-color);
+        }
+
+        .stats-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 100px;
+        }
+
+        .stats-group-title {
+            font-size: 10.5px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-muted);
+        }
+
+        .stats-bars {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .stat-bar-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            flex: 1;
+        }
+
+        .stat-bar-label {
+            font-size: 10px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .stat-bar-track {
+            height: 4px;
+            background: var(--stat-bar-bg);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .stat-bar-fill {
+            height: 100%;
+            background: var(--stat-bar-fill);
+            border-radius: 2px;
+            transition: width 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .stats-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: var(--segment-bg);
+            color: var(--text-secondary);
+        }
+
+        .stats-pill .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        .dot-medical { background: #34C759; }
+        .dot-surgical { background: #007AFF; }
+        .dot-biology { background: #FF9500; }
+
+        /* ===== UNDO/REDO & THEME TOGGLE ===== */
+        .icon-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            color: var(--undo-redo-text);
+            transition: all 0.12s ease;
+            flex-shrink: 0;
+        }
+
+        .icon-btn:hover:not(:disabled) {
+            color: var(--undo-redo-hover-text);
+            background: var(--undo-redo-hover-bg);
+        }
+
+        .icon-btn:disabled {
+            opacity: 0.3;
+            cursor: default;
+        }
+
+        .icon-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .theme-toggle {
+            color: var(--theme-toggle-text);
+        }
+
+        .theme-toggle:hover {
+            color: var(--theme-toggle-hover-text) !important;
+            background: var(--theme-toggle-hover-bg) !important;
+        }
+
+        .theme-icon-sun, .theme-icon-moon {
+            display: none;
+        }
+
+        [data-theme="dark"] .theme-icon-sun {
+            display: block;
+        }
+
+        :root:not([data-theme="dark"]) .theme-icon-moon {
+            display: block;
+        }
+
+        /* ===== MISC ===== */
+        /* ===== THEME-AWARE UTILITY CLASSES ===== */
+        .header-title { color: var(--header-title); }
+        .specialty-name { color: var(--specialty-name); }
+        .modal-title { color: var(--modal-title); }
+        .input-text { color: var(--text-primary); }
+        .placeholder-muted::placeholder { color: var(--text-muted); }
+        .placeholder-secondary::placeholder { color: var(--text-secondary); }
+        .clear-search-btn { color: var(--text-secondary); }
+        .clear-search-btn:hover { color: var(--text-primary); }
+        .row-action-btn { color: var(--row-actions-text); }
+        .row-action-btn:hover:not(:disabled) { color: var(--row-actions-hover-text); background: var(--row-actions-hover-bg); }
+        .btn-reset { color: var(--btn-reset-text); }
+        .btn-reset:hover { color: var(--btn-reset-hover-text); background: var(--btn-reset-hover-bg); }
+        .btn-reset:active { background: var(--btn-reset-active-bg); }
+        .btn-preview { color: var(--btn-preview-text); background: var(--btn-preview-bg); border: 1px solid var(--btn-preview-border); }
+        .btn-preview:hover { background: var(--btn-preview-hover); }
+        .btn-preview:active { background: var(--btn-preview-active); }
+        .btn-export { color: var(--btn-export-text); background: var(--btn-export-bg); }
+        .btn-export:hover { background: var(--btn-export-hover); }
+        .btn-export:active { background: var(--btn-export-active); }
+        .btn-confirm { background: var(--btn-confirm-bg); color: var(--btn-confirm-text); }
+        .btn-confirm:hover { background: var(--btn-confirm-hover); }
+        .btn-cancel { color: var(--modal-btn-text); }
+        .btn-cancel:hover { background: var(--modal-btn-hover); }
+
+        /* ===== SPECIALTY MODAL ===== */
+        #specialty-modal > div {
+            background: var(--modal-bg);
+            border-color: var(--modal-border);
+        }
+        #specialty-modal .modal-header {
+            border-color: var(--modal-border);
+        }
+        #specialty-modal .modal-title {
+            color: var(--modal-text);
+        }
+        #specialty-modal .modal-badge {
+            background: var(--modal-badge-bg);
+            color: var(--modal-badge-text);
+        }
+        #specialty-modal .modal-close {
+            color: var(--modal-text-secondary);
+        }
+        #specialty-modal .modal-close:hover {
+            color: var(--modal-text);
+            background: var(--modal-bg-secondary);
+        }
+        #specialty-modal .modal-category {
+            background: var(--modal-bg-secondary);
+            color: var(--modal-text-secondary);
+        }
+        #specialty-modal .modal-phase {
+            background: var(--modal-bg-secondary);
+        }
+        #specialty-modal .modal-phase-label {
+            color: var(--modal-text-secondary);
+        }
+        #specialty-modal .modal-phase-value {
+            color: var(--modal-text);
+        }
+        #specialty-modal .modal-phase-unit {
+            color: var(--modal-text-secondary);
+        }
+        #specialty-modal .modal-total-label {
+            color: var(--modal-text-secondary);
+        }
+        #specialty-modal .modal-total-value {
+            color: var(--modal-text);
+        }
+        #specialty-modal .modal-actions {
+            background: var(--modal-bg-secondary);
+            border-color: var(--modal-border);
+        }
+        #specialty-modal .modal-btn {
+            background: var(--modal-btn-bg);
+            border-color: var(--modal-btn-border);
+            color: var(--modal-btn-text);
+        }
+        #specialty-modal .modal-btn:hover {
+            background: var(--modal-btn-hover);
+        }
+        #specialty-modal .modal-divider {
+            background: var(--modal-border);
+        }
+        #specialty-modal .modal-section-header {
+            color: var(--modal-text-secondary);
+        }
+        #specialty-modal .modal-section-icon {
+            color: var(--modal-text-secondary);
+        }
+        #specialty-modal .modal-label {
+            color: var(--modal-text-secondary);
+        }
+        #specialty-modal .modal-value {
+            color: var(--modal-text);
+        }
+        #specialty-modal .modal-text {
+            color: var(--modal-text);
+        }
+        #specialty-modal .modal-text-secondary {
+            color: var(--modal-text-secondary);
+        }
+        #specialty-modal .modal-detail-item {
+            border-color: var(--modal-border);
+        }
+
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+    </style>
+</head>
+<body class="min-h-screen py-8 px-4 sm:px-6">
+
+    <div class="max-w-[760px] mx-auto">
+
+        <!-- Header Bar -->
+        <header class="flex items-center justify-between pb-5">
+            <div class="flex items-baseline gap-2.5">
+                <h1 class="text-[18px] font-semibold tracking-tight header-title">Classement DES</h1>
+                <span class="text-[13px] text-[#86868B] font-normal tabular-nums">R2C · 44 spécialités</span>
+            </div>
+
+            <div class="flex items-center gap-1.5 sm:gap-2">
+                <button id="btn-reset-modal" type="button"
+                    class="h-8 px-2.5 sm:px-3 rounded-[6px] text-[13px] font-medium btn-reset">
+                    Réinitialiser
+                </button>
+                <button id="btn-preview-pdf" type="button"
+                    class="h-8 px-3 rounded-[6px] text-[13px] font-medium btn-preview">
+                    Aperçu PDF
+                </button>
+                <button id="btn-export-pdf" type="button"
+                    class="h-8 px-3.5 rounded-[6px] text-[13px] font-medium btn-export flex items-center gap-1.5">
+                    <span id="export-btn-label">Exporter en PDF</span>
+                </button>
+            </div>
+            <div class="flex items-center gap-0.5 ml-1 sm:ml-2 pl-1.5 sm:pl-2 border-l border-[rgba(0,0,0,0.08)]">
+                <button id="btn-undo" type="button" class="icon-btn" disabled aria-label="Annuler (Ctrl+Z)" title="Annuler (Ctrl+Z)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+                </button>
+                <button id="btn-redo" type="button" class="icon-btn" disabled aria-label="Rétablir (Ctrl+Y)" title="Rétablir (Ctrl+Y)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"/></svg>
+                </button>
+                <button id="btn-theme-toggle" type="button" class="icon-btn theme-toggle" aria-label="Basculer le thème sombre" title="Basculer le thème sombre">
+                    <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                    <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Live Statistics Panel -->
+        <div class="stats-panel" id="stats-panel">
+            <div class="stats-group">
+                <span class="stats-group-title">Top 10</span>
+                <div class="stats-bars">
+                    <div class="stat-bar-wrapper">
+                        <div class="stat-bar-label"><span>Méd</span><span id="stat-med-count">0</span></div>
+                        <div class="stat-bar-track"><div class="stat-bar-fill" id="stat-med-bar" style="width: 0%"></div></div>
+                    </div>
+                    <div class="stat-bar-wrapper">
+                        <div class="stat-bar-label"><span>Chir</span><span id="stat-chir-count">0</span></div>
+                        <div class="stat-bar-track"><div class="stat-bar-fill" id="stat-chir-bar" style="width: 0%"></div></div>
+                    </div>
+                    <div class="stat-bar-wrapper">
+                        <div class="stat-bar-label"><span>Bio</span><span id="stat-bio-count">0</span></div>
+                        <div class="stat-bar-track"><div class="stat-bar-fill" id="stat-bio-bar" style="width: 0%"></div></div>
+                    </div>
+                </div>
+            </div>
+            <div class="stats-group">
+                <span class="stats-group-title">Position moyenne</span>
+                <div class="stats-bars">
+                    <div class="stat-bar-wrapper">
+                        <div class="stat-bar-label"><span>Méd</span><span id="stat-med-avg">—</span></div>
+                        <div class="stat-bar-track"><div class="stat-bar-fill" id="stat-med-avg-bar" style="width: 0%"></div></div>
+                    </div>
+                    <div class="stat-bar-wrapper">
+                        <div class="stat-bar-label"><span>Chir</span><span id="stat-chir-avg">—</span></div>
+                        <div class="stat-bar-track"><div class="stat-bar-fill" id="stat-chir-avg-bar" style="width: 0%"></div></div>
+                    </div>
+                    <div class="stat-bar-wrapper">
+                        <div class="stat-bar-label"><span>Bio</span><span id="stat-bio-avg">—</span></div>
+                        <div class="stat-bar-track"><div class="stat-bar-fill" id="stat-bio-avg-bar" style="width: 0%"></div></div>
+                    </div>
+                </div>
+            </div>
+            <div class="stats-group">
+                <span class="stats-group-title">Profil</span>
+                <div class="stats-bars">
+                    <span class="stats-pill"><span class="dot dot-medical"></span><span id="stat-pill-med">0</span></span>
+                    <span class="stats-pill"><span class="dot dot-surgical"></span><span id="stat-pill-chir">0</span></span>
+                    <span class="stats-pill"><span class="dot dot-biology"></span><span id="stat-pill-bio">0</span></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter, Pseudo & Search Toolbar -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-2.5 mb-3">
+            <div class="segmented-control self-start shrink-0" role="tablist">
+                <button type="button" data-filter="all" class="segment-btn active">Toutes</button>
+                <button type="button" data-filter="medical" class="segment-btn">Médecine</button>
+                <button type="button" data-filter="surgical" class="segment-btn">Chirurgie</button>
+                <button type="button" data-filter="biology" class="segment-btn">Biologie</button>
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
+                <!-- Minimalist Pseudo Input -->
+                <label class="macos-field flex items-center px-2.5 w-full sm:w-48 shrink-0 cursor-text">
+                    <span class="text-[11.5px] font-medium text-[#86868B] select-none pr-2 border-r border-black/[0.07]">Pseudo</span>
+                    <input id="pseudo-input" type="text" maxlength="32" placeholder="Ajouter un pseudo…"
+                        class="w-full pl-2 bg-transparent text-[13px] input-text placeholder-muted focus:outline-none">
+                </label>
+
+                <!-- Search Input -->
+                <div class="macos-field relative flex items-center w-full sm:w-48 shrink-0">
+                    <svg class="w-3.5 h-3.5 text-[#86868B] absolute left-2.5 pointer-events-none" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.2-5.2m1.7-4.3a6 6 0 11-12 0 6 6 0 0112 0z"></path>
+                    </svg>
+                    <input id="search-input" type="text" placeholder="Rechercher..."
+                        class="w-full h-full pl-8 pr-7 bg-transparent text-[13px] input-text placeholder-secondary focus:outline-none">
+                    <kbd id="search-kbd" class="absolute right-2 text-[10px] text-[#AEAEB2] font-sans border border-black/[0.08] rounded px-1 leading-tight pointer-events-none">/</kbd>
+                    <button id="clear-search" type="button" class="hidden absolute right-2 clear-search-btn" aria-label="Effacer">
+                        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Unified Inset Table Surface -->
+        <main class="table-surface">
+            <div id="specialties-list"></div>
+
+            <div id="empty-state" class="hidden py-10 text-center">
+                <p class="text-[13px] text-[#86868B]">Aucune spécialité ne correspond à votre recherche.</p>
+            </div>
+        </main>
+
+        <!-- Minimal Footer Note -->
+        <footer class="mt-3 flex items-center justify-between text-[11.5px] text-[#86868B] px-1">
+            <span>Glisser pour réordonner ou cliquer sur un rang (1–44) pour le modifier.</span>
+            <span class="tabular-nums">44 DES</span>
+        </footer>
+    </div>
+
+    <!-- Specialty Detail Floating Window -->
+    <div id="specialty-modal" class="fixed inset-0 z-50 hidden justify-end p-4">
+        <div class="rounded-[12px] w-[400px] max-w-full shadow-2xl overflow-hidden flex flex-col max-h-[calc(100vh-2rem)] modal-bg modal-border">
+            <!-- Header -->
+            <div class="flex items-center justify-between px-5 py-4 modal-header shrink-0">
+                <div class="flex items-center gap-3 flex-1 min-w-0">
+                    <span id="specialty-modal-rank" class="text-[11px] font-semibold rounded px-1.5 py-0.5 tabular-nums modal-badge shrink-0">01</span>
+                    <h2 id="specialty-modal-title" class="text-[15px] font-semibold modal-title truncate">Spécialité</h2>
+                </div>
+                <button id="specialty-modal-close" type="button" class="p-1.5 rounded-[6px] transition modal-close shrink-0 ml-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <!-- Scrollable content -->
+            <div class="px-5 py-4 space-y-5 overflow-y-auto flex-1">
+                <!-- Section: Formation -->
+                <div class="space-y-3">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-3.5 h-3.5 text-[#86868B]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/></svg>
+                        <span class="text-[11px] font-semibold uppercase tracking-wider text-[#86868B]">Formation</span>
+                    </div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span id="specialty-modal-category" class="text-[10.5px] font-medium px-2 py-0.5 rounded-full modal-category">Catégorie</span>
+                        <span id="specialty-modal-type" class="text-[10.5px] font-medium px-2 py-0.5 rounded-full modal-category opacity-70">—</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="rounded-[8px] p-2.5 text-center modal-phase">
+                            <div class="text-[9px] font-medium uppercase tracking-wide mb-0.5 modal-phase-label">Socle</div>
+                            <div id="specialty-modal-socle" class="text-[16px] font-semibold modal-phase-value">—</div>
+                            <div class="text-[9px] modal-phase-unit">sem.</div>
+                        </div>
+                        <div class="rounded-[8px] p-2.5 text-center modal-phase">
+                            <div class="text-[9px] font-medium uppercase tracking-wide mb-0.5 modal-phase-label">Approf.</div>
+                            <div id="specialty-modal-approf" class="text-[16px] font-semibold modal-phase-value">—</div>
+                            <div class="text-[9px] modal-phase-unit">sem.</div>
+                        </div>
+                        <div class="rounded-[8px] p-2.5 text-center modal-phase">
+                            <div class="text-[9px] font-medium uppercase tracking-wide mb-0.5 modal-phase-label">Consol.</div>
+                            <div id="specialty-modal-consol" class="text-[16px] font-semibold modal-phase-value">—</div>
+                            <div class="text-[9px] modal-phase-unit">sem.</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between text-[11.5px] modal-total-label">
+                        <span>Durée totale</span>
+                        <span id="specialty-modal-total" class="font-semibold modal-total-value">—</span>
+                    </div>
+                </div>
+                <div class="h-px modal-divider"></div>
+                <!-- Section: Concours -->
+                <div class="space-y-3">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-3.5 h-3.5 text-[#86868B]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                        <span class="text-[11px] font-semibold uppercase tracking-wider text-[#86868B]">Concours</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="rounded-[8px] p-2.5 text-center modal-phase">
+                            <div class="text-[9px] font-medium uppercase tracking-wide mb-0.5 modal-phase-label">Postes 2026</div>
+                            <div id="specialty-modal-postes" class="text-[16px] font-semibold modal-phase-value">—</div>
+                        </div>
+                        <div class="rounded-[8px] p-2.5 text-center modal-phase">
+                            <div class="text-[9px] font-medium uppercase tracking-wide mb-0.5 modal-phase-label">Rang limite</div>
+                            <div id="specialty-modal-rang" class="text-[16px] font-semibold modal-phase-value">—</div>
+                        </div>
+                        <div class="rounded-[8px] p-2.5 text-center modal-phase">
+                            <div class="text-[9px] font-medium uppercase tracking-wide mb-0.5 modal-phase-label">CESP</div>
+                            <div id="specialty-modal-cesp" class="text-[16px] font-semibold modal-phase-value">—</div>
+                        </div>
+                    </div>
+                    <div class="space-y-1.5">
+                        <div class="text-[10px] font-medium text-[#86868B]">Évolution des postes</div>
+                        <div id="specialty-modal-postes-details" class="space-y-1"></div>
+                    </div>
+                    <div class="space-y-1.5">
+                        <div class="text-[10px] font-medium text-[#86868B]">Évolution des rangs limites</div>
+                        <div id="specialty-modal-rangs-details" class="space-y-1"></div>
+                    </div>
+                </div>
+                <div class="h-px modal-divider"></div>
+                <!-- Section: Exercice -->
+                <div class="space-y-3">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-3.5 h-3.5 text-[#86868B]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
+                        <span class="text-[11px] font-semibold uppercase tracking-wider text-[#86868B]">Exercice</span>
+                    </div>
+                    <div class="flex items-center justify-between text-[12px]">
+                        <span class="text-[#86868B]">Modes</span>
+                        <span id="specialty-modal-modes" class="font-medium text-[#1D1D1F]">—</span>
+                    </div>
+                    <div id="specialty-modal-options" class="space-y-1"></div>
+                </div>
+                <div class="h-px modal-divider"></div>
+                <!-- Section: Stages -->
+                <div class="space-y-3">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-3.5 h-3.5 text-[#86868B]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                        <span class="text-[11px] font-semibold uppercase tracking-wider text-[#86868B]">Stages</span>
+                    </div>
+                    <p id="specialty-modal-stages" class="text-[11px] text-[#515154] leading-relaxed">—</p>
+                    <div class="space-y-2">
+                        <div class="text-[10px] font-medium text-[#86868B]">Détail par année</div>
+                        <div id="specialty-modal-details" class="space-y-2"></div>
+                    </div>
+                </div>
+            </div>
+            <!-- Footer actions -->
+            <div class="flex gap-2 px-5 py-3 modal-actions shrink-0">
+                <button id="specialty-modal-up" type="button" class="flex-1 h-8 rounded-[6px] text-[12.5px] font-medium transition flex items-center justify-center gap-1.5 modal-btn">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/></svg>
+                    Monter
+                </button>
+                <button id="specialty-modal-down" type="button" class="flex-1 h-8 rounded-[6px] text-[12.5px] font-medium transition flex items-center justify-center gap-1.5 modal-btn">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                    Descendre
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Minimal Reset Confirmation Dialog -->
+    <div id="reset-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/20 backdrop-blur-[2px]">
+        <div class="bg-white rounded-[10px] max-w-[320px] w-full p-5 border border-black/10 shadow-lg">
+            <h2 class="text-[14px] font-semibold modal-title">Réinitialiser l'ordre ?</h2>
+            <p class="text-[12.5px] text-[#86868B] mt-1 leading-relaxed">
+                Les 44 spécialités seront replacées par ordre alphabétique.
+            </p>
+            <div class="flex justify-end gap-2 mt-4">
+                <button id="cancel-reset-btn" type="button"
+                    class="h-7 px-3 rounded-[5px] text-[12.5px] font-medium btn-cancel">
+                    Annuler
+                </button>
+                <button id="confirm-reset-btn" type="button"
+                    class="h-7 px-3 rounded-[5px] text-[12.5px] font-medium btn-confirm">
+                    Réinitialiser
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- High-Resolution A4 PDF Preview Modal -->
+    <div id="pdf-preview-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-3 sm:p-6 bg-black/40 backdrop-blur-[3px]">
+        <div class="bg-[#F5F5F7] rounded-[12px] max-w-[720px] w-full max-h-[92vh] flex flex-col border border-black/15 shadow-2xl overflow-hidden">
+            <div class="flex items-center justify-between px-4 py-3 bg-white border-b border-black/[0.08]">
+                <div class="flex items-baseline gap-2">
+                    <h2 class="text-[14px] font-semibold modal-title">Aperçu A4 (210 × 297 mm)</h2>
+                    <span class="text-[12px] text-[#86868B]">300 DPI · Marges sécurisées</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="close-preview-btn" type="button"
+                        class="h-7 px-3 rounded-[5px] text-[12.5px] font-medium btn-cancel">
+                        Fermer
+                    </button>
+                    <button id="modal-download-pdf-btn" type="button"
+                        class="h-7 px-3 rounded-[5px] text-[12.5px] font-medium btn-confirm">
+                        Télécharger le PDF
+                    </button>
+                </div>
+            </div>
+            <div class="p-4 sm:p-6 overflow-y-auto flex justify-center bg-[#E5E5EA]/60">
+                <img id="pdf-preview-img" alt="Aperçu du classement A4"
+                    class="w-full max-w-[560px] h-auto bg-white shadow-md border border-black/10 rounded-[2px]" />
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const INITIAL_SPECIALTIES = [
+            { id: "allergologie", name: "Allergologie", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "anapath", name: "Anatomie et cytologie pathologiques", category: "medical", meta: "Médecine · 5 ans", shortMeta: "Méd · 5 ans" },
+            { id: "anesthesie", name: "Anesthésie-réanimation", category: "medical", meta: "Médecine · 5 ans", shortMeta: "Méd · 5 ans" },
+            { id: "biologie", name: "Biologie médicale", category: "biology", meta: "Biologie · 4 ans", shortMeta: "Bio · 4 ans" },
+            { id: "chir-maxillo", name: "Chirurgie maxillo-faciale", category: "surgical", meta: "Chirurgie · 6 ans", shortMeta: "Chir · 6 ans" },
+            { id: "chir-orale", name: "Chirurgie orale", category: "surgical", meta: "Chirurgie · 4 ans", shortMeta: "Chir · 4 ans" },
+            { id: "chir-ortho", name: "Chirurgie orthopédique et traumatologique", category: "surgical", meta: "Chirurgie · 6 ans", shortMeta: "Chir · 6 ans" },
+            { id: "chir-ped", name: "Chirurgie pédiatrique", category: "surgical", meta: "Chirurgie · 6 ans", shortMeta: "Chir · 6 ans" },
+            { id: "chir-plastique", name: "Chirurgie plastique, reconstructrice et esthétique", category: "surgical", meta: "Chirurgie · 6 ans", shortMeta: "Chir · 6 ans" },
+            { id: "chir-thoracique", name: "Chirurgie thoracique et cardiovasculaire", category: "surgical", meta: "Chirurgie · 6 ans", shortMeta: "Chir · 6 ans" },
+            { id: "chir-vasculaire", name: "Chirurgie vasculaire", category: "surgical", meta: "Chirurgie · 6 ans", shortMeta: "Chir · 6 ans" },
+            { id: "chir-viscerale", name: "Chirurgie viscérale et digestive", category: "surgical", meta: "Chirurgie · 6 ans", shortMeta: "Chir · 6 ans" },
+            { id: "dermatologie", name: "Dermatologie et vénéréologie", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "endocrinologie", name: "Endocrinologie-diabétologie-nutrition", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "genetique", name: "Génétique médicale", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "geriatrie", name: "Gériatrie", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "gyneco-med", name: "Gynécologie médicale", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "gyneco-obs", name: "Gynécologie obstétrique", category: "surgical", meta: "Chirurgie · 6 ans", shortMeta: "Chir · 6 ans" },
+            { id: "hematologie", name: "Hématologie", category: "medical", meta: "Médecine · 5 ans", shortMeta: "Méd · 5 ans" },
+            { id: "hge", name: "Hépato-gastro-entérologie", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "infectiologie", name: "Maladies infectieuses et tropicales", category: "medical", meta: "Médecine · 5 ans", shortMeta: "Méd · 5 ans" },
+            { id: "cardio", name: "Médecine cardiovasculaire", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "urgences", name: "Médecine d'urgence", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "med-travail", name: "Médecine et santé au travail", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "med-generale", name: "Médecine générale", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "mir", name: "Médecine intensive-réanimation", category: "medical", meta: "Médecine · 5 ans", shortMeta: "Méd · 5 ans" },
+            { id: "med-interne", name: "Médecine interne et immunologie clinique", category: "medical", meta: "Médecine · 5 ans", shortMeta: "Méd · 5 ans" },
+            { id: "med-legale", name: "Médecine légale et expertises médicales", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "med-nucleaire", name: "Médecine nucléaire", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "mpr", name: "Médecine physique et de réadaptation", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "med-vasculaire", name: "Médecine vasculaire", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "nephrologie", name: "Néphrologie", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "neurochir", name: "Neurochirurgie", category: "surgical", meta: "Chirurgie · 6 ans", shortMeta: "Chir · 6 ans" },
+            { id: "neurologie", name: "Neurologie", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "oncologie", name: "Oncologie", category: "medical", meta: "Médecine · 5 ans", shortMeta: "Méd · 5 ans" },
+            { id: "ophtalmo", name: "Ophtalmologie", category: "surgical", meta: "Chirurgie · 6 ans", shortMeta: "Chir · 6 ans" },
+            { id: "orl", name: "Oto-rhino-laryngologie - chirurgie cervico-faciale", category: "surgical", meta: "Chirurgie · 6 ans", shortMeta: "Chir · 6 ans" },
+            { id: "pediatrie", name: "Pédiatrie", category: "medical", meta: "Médecine · 5 ans", shortMeta: "Méd · 5 ans" },
+            { id: "pneumologie", name: "Pneumologie", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "psychiatrie", name: "Psychiatrie", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "radiologie", name: "Radiologie et imagerie médicale", category: "medical", meta: "Médecine · 5 ans", shortMeta: "Méd · 5 ans" },
+            { id: "rhumatologie", name: "Rhumatologie", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "sante-publique", name: "Santé publique", category: "medical", meta: "Médecine · 4 ans", shortMeta: "Méd · 4 ans" },
+            { id: "urologie", name: "Urologie", category: "surgical", meta: "Chirurgie · 6 ans", shortMeta: "Chir · 6 ans" }
+        ];
+
+        const STORAGE_KEY = "des_ranking_france_v1";
+        const PSEUDO_STORAGE_KEY = "des_ranking_pseudo_v1";
+        const THEME_STORAGE_KEY = "des_ranking_theme_v1";
+
+        let specialties = [];
+        let userPseudo = "";
+        let activeCategory = "all";
+        let searchQuery = "";
+        let lastMovedId = null;
+
+        // Undo/Redo history
+        let historyStack = [];
+        let historyIndex = -1;
+        const MAX_HISTORY = 50;
+
+        // Theme
+        let currentTheme = "light";
+
+        function getAlphabeticalDefault() {
+            return [...INITIAL_SPECIALTIES].sort((a, b) => a.name.localeCompare(b.name, "fr"));
+        }
+
+        function loadState() {
+            try {
+                const savedPseudo = localStorage.getItem(PSEUDO_STORAGE_KEY);
+                if (typeof savedPseudo === "string") {
+                    userPseudo = savedPseudo;
+                }
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    const ids = JSON.parse(raw);
+                    if (Array.isArray(ids) && ids.length === INITIAL_SPECIALTIES.length) {
+                        const byId = new Map(INITIAL_SPECIALTIES.map(s => [s.id, s]));
+                        const ordered = ids.map(id => byId.get(id)).filter(Boolean);
+                        if (ordered.length === INITIAL_SPECIALTIES.length) {
+                            specialties = ordered;
+                            return;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn("Storage read error:", e);
+            }
+            specialties = getAlphabeticalDefault();
+        }
+
+        function saveState() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(specialties.map(s => s.id)));
+            } catch (e) {
+                console.warn("Storage write error:", e);
+            }
+        }
+
+        function savePseudo() {
+            try {
+                localStorage.setItem(PSEUDO_STORAGE_KEY, userPseudo);
+            } catch (e) {
+                console.warn("Pseudo write error:", e);
+            }
+        }
+
+        function normalizeStr(str) {
+            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        }
+
+        // ===== HISTORY (UNDO/REDO) =====
+        function pushHistory() {
+            const snapshot = specialties.map(s => s.id);
+            // Remove any redo states
+            historyStack = historyStack.slice(0, historyIndex + 1);
+            historyStack.push(snapshot);
+            if (historyStack.length > MAX_HISTORY) {
+                historyStack.shift();
+            } else {
+                historyIndex++;
+            }
+            updateUndoRedoButtons();
+        }
+
+        function undo() {
+            if (historyIndex <= 0) return;
+            historyIndex--;
+            const snapshot = historyStack[historyIndex];
+            applySnapshot(snapshot);
+            updateUndoRedoButtons();
+        }
+
+        function redo() {
+            if (historyIndex >= historyStack.length - 1) return;
+            historyIndex++;
+            const snapshot = historyStack[historyIndex];
+            applySnapshot(snapshot);
+            updateUndoRedoButtons();
+        }
+
+        function applySnapshot(snapshot) {
+            const byId = new Map(INITIAL_SPECIALTIES.map(s => [s.id, s]));
+            specialties = snapshot.map(id => byId.get(id)).filter(Boolean);
+            lastMovedId = null;
+            renderList();
+            saveState();
+            updateStats();
+        }
+
+        function updateUndoRedoButtons() {
+            const undoBtn = document.getElementById("btn-undo");
+            const redoBtn = document.getElementById("btn-redo");
+            if (undoBtn) undoBtn.disabled = historyIndex <= 0;
+            if (redoBtn) redoBtn.disabled = historyIndex >= historyStack.length - 1;
+        }
+
+        // ===== THEME =====
+        function getPreferredTheme() {
+            try {
+                const saved = localStorage.getItem(THEME_STORAGE_KEY);
+                if (saved === "dark" || saved === "light") return saved;
+            } catch (e) { /* ignore */ }
+            if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+                return "dark";
+            }
+            return "light";
+        }
+
+        function applyTheme(theme) {
+            currentTheme = theme;
+            if (theme === "dark") {
+                document.documentElement.setAttribute("data-theme", "dark");
+            } else {
+                document.documentElement.removeAttribute("data-theme");
+            }
+            try {
+                localStorage.setItem(THEME_STORAGE_KEY, theme);
+            } catch (e) { /* ignore */ }
+        }
+
+        function toggleTheme() {
+            const newTheme = currentTheme === "dark" ? "light" : "dark";
+            applyTheme(newTheme);
+        }
+
+        // ===== SPECIALTY DETAIL MODAL =====
+        const FULL_SPECIALTY_DATA = {
+            "chir-maxillo": {"postes":{"2023":27,"2024":22,"2025":26,"2026":32},"rangs":{"2023":2206,"2024":2393,"2025":2078,"2026":2428},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Année 1 : 6 mois en chirurgie maxillo-faciale ; 6 mois en chirurgie maxillo-faciale ou stage libre.","Années 2 à 4 : 6 mois en chirurgie maxillo-faciale ; 6 mois de stage libre avec au moins un stage parmi chirurgie plastique, ORL-chirurgie cervico-faciale et neurochirurgie.","Année 5 : 12 mois en chirurgie maxillo-faciale.","Année 6 : 12 mois en chirurgie maxillo-faciale."],"options":["Orthodontie des dysmorphies maxillo-faciales"]},
+            "chir-orale": {"postes":{"2023":16,"2024":12,"2025":10,"2026":12},"rangs":{"2023":3772,"2024":3333,"2025":2633,"2026":3488},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Année 1 : 6 mois en chirurgie orale ; 6 mois en chirurgie orale ou stage libre.","Année 2 : 6 mois en chirurgie orale ; 6 mois en chirurgie orale ou stage libre.","Année 3 : 6 mois en chirurgie orale ; 6 mois en stage libre.","Année 4 : 12 mois en chirurgie orale.","Contrainte : au moins 3 stages en médecine et 3 stages en odontologie."],"options":[]},
+            "chir-ortho": {"postes":{"2023":130,"2024":108,"2025":125,"2026":142},"rangs":{"2023":3573,"2024":3710,"2025":3315,"2026":4004},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Année 1 : 6 mois en chirurgie orthopédique et traumatologique ; 6 mois en COT ou dans une autre spécialité chirurgicale.","Année 2 : 12 mois en COT.","Année 3 : 6 mois en COT ; 6 mois en orthopédie pédiatrique.","Année 4 : 6 mois de stage libre ; 6 mois parmi chirurgie vasculaire, chirurgie plastique ou neurochirurgie.","Années 5 et 6 : 12 mois/an en COT."],"options":[]},
+            "chir-ped": {"postes":{"2023":33,"2024":33,"2025":36,"2026":42},"rangs":{"2023":4775,"2024":3912,"2025":3799,"2026":5351},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Choix précoce entre chirurgie viscérale pédiatrique et chirurgie orthopédique pédiatrique.","Année 1 : 6 mois dans l'option choisie ; 6 mois hors spécialité chirurgicale.","Année 2 : 12 mois dans l'option choisie.","Année 3 : 6 mois dans l'option non choisie ; 6 mois de stage libre.","Année 4 : 12 mois hors option ; en viscéral, un stage de chirurgie viscérale et un stage d'urologie ; en orthopédie, deux stages de COT.","Années 5 et 6 : 12 mois/an en chirurgie pédiatrique dans l'option choisie."],"options":["Chirurgie viscérale pédiatrique","Chirurgie orthopédique pédiatrique"]},
+            "chir-plastique": {"postes":{"2023":28,"2024":14,"2025":25,"2026":27},"rangs":{"2023":1524,"2024":1166,"2025":1223,"2026":1759},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Années 1 à 3 : 6 mois en chirurgie plastique ; 6 mois de stage hors liste définie par la maquette.","Année 4 : 6 mois en chirurgie plastique ; 6 mois de stage libre.","Années 5 et 6 : 12 mois/an en chirurgie plastique.","Stages hors spécialité possibles : notamment pédiatrie, chirurgie vasculaire, chirurgie viscérale, orthopédie-traumatologie ; approfondissement : CMF, pédiatrie, vasculaire, viscérale, ORL, COT, sénologie, centre des brûlés."],"options":[]},
+            "chir-thoracique": {"postes":{"2023":25,"2024":21,"2025":28,"2026":33},"rangs":{"2023":4952,"2024":3901,"2025":4527,"2026":5678},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["DES de 6 ans : phase socle de 2 semestres, phase d'approfondissement de 6 semestres, phase de consolidation de 4 semestres.","Répartition précise des stages conforme à la maquette réglementaire de la spécialité."],"options":[]},
+            "chir-vasculaire": {"postes":{"2023":28,"2024":23,"2025":25,"2026":28},"rangs":{"2023":4274,"2024":3902,"2025":4265,"2026":5469},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Année 1 : 6 mois en chirurgie vasculaire ; 6 mois en chirurgie vasculaire ou autre chirurgie.","Année 2 : 12 mois en chirurgie vasculaire.","Année 3 : 6 mois en chirurgie vasculaire ; 6 mois hors spécialité.","Année 4 : 6 mois en chirurgie vasculaire ; 6 mois de stage libre.","Années 5 et 6 : 12 mois/an en chirurgie vasculaire."],"options":[]},
+            "chir-viscerale": {"postes":{"2023":90,"2024":75,"2025":91,"2026":101},"rangs":{"2023":5078,"2024":3801,"2025":6395,"2026":5413},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Année 1 : 6 mois en chirurgie viscérale et digestive ; 6 mois en chirurgie viscérale/digestive ou autre chirurgie.","Année 2 : 12 mois en chirurgie viscérale et digestive.","Année 3 : 6 mois en chirurgie viscérale et digestive ; 6 mois hors spécialité.","Année 4 : 6 mois en chirurgie viscérale et digestive ; 6 mois de stage libre.","Années 5 et 6 : 12 mois/an en chirurgie viscérale et digestive."],"options":[]},
+            "gyneco-obs": {"postes":{"2023":237,"2024":203,"2025":229,"2026":275},"rangs":{"2023":8609,"2024":5517,"2025":4258,"2026":4346},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Année 1 : 6 mois en gynécologie-obstétrique ; 6 mois de stage libre.","Année 2 : 12 mois en gynécologie-obstétrique.","Année 3 : 6 mois en gynécologie-obstétrique ; 6 mois en gynécologie-obstétrique ou stage libre si le stage requis a déjà été effectué au socle.","Année 4 : 12 mois de stages libres.","Années 5 et 6 : consolidation centrée sur la gynécologie-obstétrique."],"options":[]},
+            "neurochir": {"postes":{"2023":28,"2024":26,"2025":28,"2026":32},"rangs":{"2023":4760,"2024":3687,"2025":4485,"2026":5446},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Année 1 : 12 mois en neurochirurgie.","Année 2 : 12 mois en neurochirurgie.","Année 3 : 6 mois en neurochirurgie ; 6 mois de stage libre.","Année 4 : 12 mois de stages libres.","Années 5 et 6 : 12 mois/an en neurochirurgie."],"options":[]},
+            "ophtalmo": {"postes":{"2023":155,"2024":126,"2025":151,"2026":169},"rangs":{"2023":6445,"2024":1873,"2025":3716,"2026":1895},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Année 1 : 6 mois en ophtalmologie ; 6 mois de stage libre.","Année 2 : 12 mois en ophtalmologie.","Année 3 : 6 mois en ophtalmologie ; 6 mois de stage libre orienté vers les besoins de formation/option/FST.","Année 4 : 12 mois en ophtalmologie.","Années 5 et 6 : 12 mois/an en ophtalmologie."],"options":["Chirurgie ophtalmologique pédiatrique et strabologie"]},
+            "orl": {"postes":{"2023":90,"2024":74,"2025":80,"2026":96},"rangs":{"2023":7936,"2024":2486,"2025":4558,"2026":2732},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Maquette en 6 ans : phase socle 2 semestres, approfondissement 6 semestres, consolidation 4 semestres.","Stages majoritairement en ORL-chirurgie cervico-faciale, avec stages complémentaires et/ou libres selon la phase."],"options":[]},
+            "urologie": {"postes":{"2023":65,"2024":54,"2025":61,"2026":70},"rangs":{"2023":9398,"2024":3128,"2025":4096,"2026":4310},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Année 1 : 6 mois en urologie ; 6 mois en urologie, chirurgie pédiatrique, gynécologie-obstétrique ou chirurgie viscérale.","Années 2 et 3 : 6 mois en urologie ; 6 mois en chirurgie viscérale.","Année 4 : 12 mois de stages libres.","Années 5 et 6 : consolidation en urologie."],"options":[]},
+            "allergologie": {"postes":{"2023":35,"2024":29,"2025":35,"2026":41},"rangs":{"2023":7330,"2024":6332,"2025":5854,"2026":6765},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["DES médical de 4 ans : socle 2 semestres, approfondissement 4 semestres, consolidation 2 semestres.","Formation centrée sur l'allergologie clinique, avec stages complémentaires dans les disciplines requises par la maquette."],"options":[]},
+            "anapath": {"postes":{"2023":70,"2024":60,"2025":68,"2026":76},"rangs":{"2023":5082,"2024":5561,"2025":6608,"2026":7055},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Année 1 : 6 mois en ACP ; 6 mois de stage libre.","Années 2 et 3 : 12 mois/an en ACP.","Année 4 : 6 mois en ACP avec activité de pathologie moléculaire/génétique ; 6 mois de stage libre.","Année 5 : 12 mois en ACP."],"options":[]},
+            "anesthesie": {"postes":{"2023":510,"2024":431,"2025":480,"2026":540},"rangs":{"2023":7830,"2024":5524,"2025":3313,"2026":3073},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Année 1 : 6 mois d'anesthésie-réanimation ; 6 mois de MIR.","Année 2 : 12 mois d'anesthésie-réanimation.","Année 3 : 6 mois d'anesthésie-réanimation ; 6 mois de MIR.","Année 4 : 6 mois d'anesthésie ou MIR ; 6 mois de stage libre.","Année 5 : 12 mois d'anesthésie-réanimation."],"options":[]},
+            "cardio": {"postes":{"2023":204,"2024":170,"2025":194,"2026":232},"rangs":{"2023":8110,"2024":3691,"2025":5738,"2026":3725},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["DES de 5 ans : phase socle de 2 semestres, phase d'approfondissement de 6 semestres, phase de consolidation de 2 semestres.","Répartition précise des stages conforme à la maquette réglementaire de la spécialité."],"options":[]},
+            "dermatologie": {"postes":{"2023":113,"2024":94,"2025":104,"2026":130},"rangs":{"2023":7648,"2024":5325,"2025":4415,"2026":1379},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Année 1 : 6 mois en dermatologie ; 6 mois parmi médecine interne, maladies infectieuses et tropicales ou rhumatologie.","Année 2 : 6 mois en dermatologie ; 6 mois de stage libre dans la liste prévue.","Année 3 : 6 mois de stage libre ; 6 mois couplé dermatologie + activité complémentaire.","Année 4 : 12 mois en dermatologie."],"options":[]},
+            "endocrinologie": {"postes":{"2023":103,"2024":86,"2025":95,"2026":110},"rangs":{"2023":9511,"2024":7253,"2025":5121,"2026":6065},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Année 1 : 6 mois en endocrinologie-diabétologie ou diabétologie ; 6 mois en nutrition.","Année 2 : 6 mois en endocrinologie-diabétologie-nutrition ; 6 mois hors spécialité.","Année 3 : 6 mois en endocrinologie-diabétologie-nutrition ; 6 mois de stage libre.","Année 4 : 12 mois en endocrinologie-diabétologie-nutrition."],"options":[]},
+            "genetique": {"postes":{"2023":25,"2024":21,"2025":25,"2026":32},"rangs":{"2023":9515,"2024":7495,"2025":7581,"2026":10380},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Année 1 : 6 mois en génétique clinique ; 6 mois en génétique biologique.","Année 2 : 6 mois en génétique clinique ; 6 mois de stage libre.","Année 3 : 6 mois en génétique biologique ; 6 mois de stage libre.","Année 4 : 12 mois en génétique médicale."],"options":[]},
+            "geriatrie": {"postes":{"2023":196,"2024":163,"2025":177,"2026":212},"rangs":{"2023":9726,"2024":7812,"2025":8897,"2026":10264},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Année 1 : 6 mois en gériatrie ; 6 mois parmi urgences, médecine interne, cardiologie, neurologie, pneumologie ou rhumatologie.","Années 2 et 3 : 6 mois en gériatrie ; 6 mois de stage libre/complementaire parmi MIR, médecine interne, cardiologie, neurologie, oncologie, pneumologie, rhumatologie.","Année 4 : 12 mois en gériatrie."],"options":[]},
+            "gyneco-med": {"postes":{"2023":91,"2024":74,"2025":80,"2026":100},"rangs":{"2023":7877,"2024":7113,"2025":6316,"2026":4044},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Année 1 : 6 mois en gynécologie médicale, endocrinologie-nutrition ou oncologie ; 6 mois en gynécologie-obstétrique.","Année 2 : 12 mois en gynécologie-obstétrique.","Année 3 : 6 mois en gynécologie médicale, endocrinologie-nutrition ou oncologie ; 6 mois de stage libre.","Année 4 : 12 mois en gynécologie médicale."],"options":[]},
+            "hematologie": {"postes":{"2023":54,"2024":45,"2025":50,"2026":58},"rangs":{"2023":5813,"2024":4491,"2025":5187,"2026":6715},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Année 1 : 6 mois en hématologie ; 6 mois de stage libre dans les disciplines autorisées.","Année 2 : 6 mois en hématologie ; 6 mois en biologie médicale ou ACP.","Année 3 : 6 mois en hématologie ; 6 mois en MIR.","Année 4 : 6 mois libres ; 6 mois en oncologie médicale ou onco-hématologie pédiatrique.","Année 5 : consolidation en hématologie."],"options":[]},
+            "hge": {"postes":{"2023":147,"2024":123,"2025":133,"2026":158},"rangs":{"2023":8748,"2024":4557,"2025":6639,"2026":4214},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Année 1 : 12 mois en HGE.","Année 2 : 12 mois en HGE, dont un stage avec activité d'endoscopie digestive.","Année 3 : 12 mois en HGE.","Année 4 : 6 mois de stage libre ; 6 mois hors HGE.","Année 5 : 12 mois en HGE."],"options":[]},
+            "infectiologie": {"postes":{"2023":60,"2024":50,"2025":53,"2026":60},"rangs":{"2023":5064,"2024":5244,"2025":4530,"2026":6579},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["DES de 5 ans : socle 2 semestres, approfondissement 6 semestres, consolidation 2 semestres.","Formation centrée sur les maladies infectieuses, avec passages dans les disciplines complémentaires requises par la maquette."],"options":[]},
+            "urgences": {"postes":{"2023":495,"2024":416,"2025":455,"2026":545},"rangs":{"2023":9244,"2024":7167,"2025":8418,"2026":8443},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["DES de 4 ans : phase socle de 2 semestres, phase d'approfondissement de 4 semestres, phase de consolidation de 2 semestres.","Répartition précise des stages conforme à la maquette réglementaire de la spécialité."],"options":[]},
+            "med-travail": {"postes":{"2023":116,"2024":93,"2025":102,"2026":119},"rangs":{"2023":9684,"2024":7817,"2025":8958,"2026":10369},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Années 1 à 3 : 6 mois en santé au travail ; 6 mois dans une spécialité médicale choisie selon la maquette.","Année 4 : 12 mois dans la spécialité/activité de consolidation prévue."],"options":[]},
+            "med-generale": {"postes":{"2023":3856,"2024":3221,"2025":3593,"2026":4070},"rangs":{"2023":9716,"2024":7816,"2025":8957,"2026":10195},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Année 1 : 6 mois aux urgences ; 6 mois en médecine générale ambulatoire.","Année 2 : 6 mois en gériatrie, médecine interne, post-urgences ou médecine polyvalente ; 6 mois couplés pédiatrie/gynécologie.","Année 3 : 6 mois libre ; 6 mois SASPAS/ambulatoire en médecine générale.","Année 4 : 12 mois en ambulatoire de médecine générale."],"options":[]},
+            "mir": {"postes":{"2023":105,"2024":90,"2025":98,"2026":106},"rangs":{"2023":4972,"2024":3584,"2025":4481,"2026":5612},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Année 1 : 6 mois en MIR ; 6 mois en anesthésie-réanimation.","Années 2 et 3 : 6 mois en MIR ; 6 mois dans une discipline de l'aigu ou une discipline complémentaire autorisée.","Année 4 : 6 mois hors MIR ; 6 mois de stage libre.","Année 5 : 12 mois en MIR."],"options":[]},
+            "med-interne": {"postes":{"2023":137,"2024":114,"2025":125,"2026":145},"rangs":{"2023":6870,"2024":5654,"2025":6130,"2026":8217},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Année 1 : 6 mois en médecine interne ; 6 mois en maladies infectieuses et tropicales.","Année 2 : 6 mois en médecine interne ; 6 mois de stage libre.","Année 3 : 6 mois de stage libre ; 6 mois en MIR.","Année 4 : 12 mois de stages libres.","Année 5 : 12 mois en médecine interne."],"options":[]},
+            "med-legale": {"postes":{"2023":28,"2024":23,"2025":26,"2026":32},"rangs":{"2023":7854,"2024":7444,"2025":6836,"2026":9291},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Année 1 : 6 mois en médecine légale/expertise ; 6 mois hors spécialité.","Année 2 : 6 mois en médecine légale/expertise ; 6 mois hors spécialité.","Année 3 : 12 mois en médecine légale.","Année 4 : 12 mois de consolidation dans la spécialité."],"options":[]},
+            "med-nucleaire": {"postes":{"2023":35,"2024":31,"2025":37,"2026":44},"rangs":{"2023":3418,"2024":2966,"2025":3608,"2026":4644},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Année 1 : 6 mois en médecine nucléaire ; 6 mois parmi endocrinologie-nutrition, médecine cardiovasculaire, médecine interne, neurologie, oncologie.","Années 2 et 3 : 6 mois en médecine nucléaire ; 6 mois dans une discipline autorisée, en évitant les disciplines déjà faites selon les règles de la maquette.","Année 4 : 12 mois en médecine nucléaire."],"options":[]},
+            "mpr": {"postes":{"2023":108,"2024":90,"2025":99,"2026":112},"rangs":{"2023":7463,"2024":6932,"2025":7106,"2026":8608},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Année 1 : 6 mois en MPR ; 6 mois de stage libre.","Année 2 : 6 mois en MPR ; 6 mois parmi gériatrie, neurologie, pédiatrie ou rhumatologie.","Année 3 : 6 mois en MPR ; 6 mois de stage libre.","Année 4 : 12 mois en MPR."],"options":[]},
+            "med-vasculaire": {"postes":{"2023":49,"2024":40,"2025":49,"2026":56},"rangs":{"2023":4555,"2024":3661,"2025":4259,"2026":4796},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Année 1 : 6 mois en médecine vasculaire ; 6 mois en médecine cardiovasculaire.","Année 2 : 6 mois en médecine vasculaire ; 6 mois hors spécialité.","Année 3 : 6 mois en médecine vasculaire avec activité d'explorations cardiovasculaires ; 6 mois hors spécialité.","Année 4 : consolidation en médecine vasculaire."],"options":[]},
+            "nephrologie": {"postes":{"2023":91,"2024":75,"2025":80,"2026":90},"rangs":{"2023":4629,"2024":4098,"2025":4678,"2026":6174},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Années 1 à 4 : 6 mois en néphrologie ; 6 mois en MIR, discipline complémentaire autorisée ou stage libre selon la phase et les stages déjà réalisés.","Année 5 : consolidation en néphrologie."],"options":[]},
+            "neurologie": {"postes":{"2023":143,"2024":119,"2025":130,"2026":150},"rangs":{"2023":8922,"2024":4083,"2025":4291,"2026":6145},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Année 1 : 6 mois en neurologie ; 6 mois de stage libre.","Année 2 : 12 mois en neurologie.","Année 3 : 6 mois en neurologie ; 6 mois de stage libre préférentiellement parmi MPR, neurologie, neurophysiologie, neuroradiologie ou psychiatrie.","Année 4 : 12 mois en neurologie."],"options":[]},
+            "oncologie": {"postes":{"2023":132,"2024":110,"2025":126,"2026":151},"rangs":{"2023":8576,"2024":3424,"2025":4252,"2026":5550},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Choix précoce entre oncologie médicale et oncologie radiothérapique.","Année 1 : 6 mois dans la filière oncologique ; 6 mois dans l'autre filière oncologique.","Année 2 : 6 mois d'oncologie avec activité correspondant à l'option ; 6 mois hors spécialité autorisée.","Phases d'approfondissement et de consolidation ensuite centrées sur l'option choisie."],"options":["Oncologie médicale","Oncologie radiothérapique"]},
+            "pediatrie": {"postes":{"2023":377,"2024":351,"2025":389,"2026":468},"rangs":{"2023":6271,"2024":5751,"2025":8077,"2026":6791},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Année 1 : deux stages de 6 mois parmi néonatologie, pédiatrie générale et urgences pédiatriques.","Année 2 : deux stages de 6 mois en pédiatrie, dont néonatologie si non réalisée au socle.","Année 3 : 6 mois en pédiatrie générale si non réalisée ; 6 mois de stage libre.","Année 4 : 6 mois en urgences pédiatriques ou réanimation pédiatrique si non réalisés ; 6 mois de stage libre.","Année 5 : deux stages de 6 mois en pédiatrie."],"options":[]},
+            "pneumologie": {"postes":{"2023":138,"2024":115,"2025":130,"2026":156},"rangs":{"2023":4877,"2024":5652,"2025":6539,"2026":5741},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Année 1 : 6 mois en pneumologie ; 6 mois en pneumologie ou MIR.","Année 2 : 12 mois en pneumologie, dont un stage avec plateau technique spécifique.","Année 3 : 6 mois en pneumologie ; 6 mois en MIR ou pneumologie selon ce qui a déjà été réalisé au socle.","Année 4 : 12 mois de stages libres.","Année 5 : 12 mois en pneumologie."],"options":[]},
+            "psychiatrie": {"postes":{"2023":553,"2024":489,"2025":563,"2026":665},"rangs":{"2023":9725,"2024":7803,"2025":8954,"2026":10451},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Années 1 et 2 : stages de psychiatrie adulte et de psychiatrie de l'enfant et de l'adolescent.","Choix d'orientation entre psychiatrie de l'adulte et psychiatrie de l'enfant et de l'adolescent.","Fin de cursus : approfondissement et consolidation centrés sur l'option choisie."],"options":["Psychiatrie de l'adulte","Psychiatrie de l'enfant et de l'adolescent"]},
+            "radiologie": {"postes":{"2023":273,"2024":225,"2025":259,"2026":266},"rangs":{"2023":8114,"2024":4667,"2025":5295,"2026":4545},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Années 1 à 3 : 12 mois/an en radiologie et imagerie médicale.","Année 4 : 6 mois en radiologie ; 6 mois de stage libre.","Année 5 : 12 mois en radiologie."],"options":[]},
+            "rhumatologie": {"postes":{"2023":94,"2024":78,"2025":86,"2026":107},"rangs":{"2023":5268,"2024":4109,"2025":4689,"2026":5472},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Année 1 : 6 mois en rhumatologie ; 6 mois hors spécialité.","Années 2 et 3 : 6 mois en rhumatologie ; 6 mois hors spécialité dans la liste autorisée.","Année 4 : 12 mois en rhumatologie."],"options":[]},
+            "sante-publique": {"postes":{"2023":87,"2024":70,"2025":71,"2026":75},"rangs":{"2023":9705,"2024":7787,"2025":8957,"2026":10445},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Année 1 : 6 mois en santé publique ; 6 mois libre.","Année 2 : 6 mois en santé publique ; 6 mois libre.","Année 3 : 12 mois en santé publique.","Année 4 : 12 mois en santé publique.","Option Administration de la santé : 12 mois supplémentaires."],"options":["Administration de la santé"]},
+            "biologie": {"postes":{"2023":107,"2024":87,"2025":92,"2026":95},"rangs":{"2023":9723,"2024":7813,"2025":8954,"2026":10439},"stages_format":"stages de 6 mois, avec possibilité de stage annuel de 12 mois en consolidation selon la maquette","details":["Année 1 : deux stages de 6 mois en biologie médicale.","Année 2 : 6 mois en biologie médicale ; 6 mois en biologie médicale ou stage libre.","Choix précoce entre Biologie générale, Médecine moléculaire-génétique-pharmacologie et Hématologie-immunologie.","Années suivantes : approfondissement et consolidation en biologie médicale selon l'option choisie."],"options":["Biologie générale","Médecine moléculaire, génétique et pharmacologie","Hématologie et immunologie"]}
+        };
+
+        const SPECIALTY_DATA = {
+            "chir-maxillo": { disc: "Chirurgical", duree: 12, socle: 2, approf: 6, consol: 4, postes2026: 32, rangLimite2026: 2428, cesp2026: 0, modes: ["salariat","libéral"], type: "chirurgicale" },
+            "chir-orale": { disc: "Chirurgical", duree: 8, socle: 2, approf: 4, consol: 2, postes2026: 12, rangLimite2026: 3488, cesp2026: 0, modes: ["libéral"], type: "chirurgicale" },
+            "chir-ortho": { disc: "Chirurgical", duree: 12, socle: 2, approf: 6, consol: 4, postes2026: 142, rangLimite2026: 4004, cesp2026: 0, modes: ["salariat","libéral"], type: "chirurgicale" },
+            "chir-ped": { disc: "Chirurgical", duree: 12, socle: 2, approf: 6, consol: 4, postes2026: 42, rangLimite2026: 5351, cesp2026: 0, modes: ["salariat"], type: "chirurgicale" },
+            "chir-plastique": { disc: "Chirurgical", duree: 12, socle: 2, approf: 6, consol: 4, postes2026: 27, rangLimite2026: 1759, cesp2026: 0, modes: ["libéral"], type: "chirurgicale" },
+            "chir-thoracique": { disc: "Chirurgical", duree: 12, socle: 2, approf: 6, consol: 4, postes2026: 33, rangLimite2026: 5678, cesp2026: 0, modes: [], type: "" },
+            "chir-vasculaire": { disc: "Chirurgical", duree: 12, socle: 2, approf: 6, consol: 4, postes2026: 28, rangLimite2026: 5469, cesp2026: 0, modes: ["salariat","libéral"], type: "chirurgicale" },
+            "chir-viscerale": { disc: "Chirurgical", duree: 12, socle: 2, approf: 6, consol: 4, postes2026: 101, rangLimite2026: 5413, cesp2026: 0, modes: ["salariat"], type: "chirurgicale" },
+            "gyneco-obs": { disc: "Chirurgical", duree: 10, socle: 2, approf: 6, consol: 2, postes2026: 275, rangLimite2026: 4346, cesp2026: 0, modes: ["salariat","libéral"], type: "médico-chirurgicale" },
+            "neurochir": { disc: "Chirurgical", duree: 12, socle: 2, approf: 6, consol: 4, postes2026: 32, rangLimite2026: 5446, cesp2026: 1, modes: ["salariat"], type: "chirurgicale" },
+            "ophtalmo": { disc: "Chirurgical", duree: 12, socle: 2, approf: 6, consol: 4, postes2026: 169, rangLimite2026: 1895, cesp2026: 1, modes: ["salariat","libéral"], type: "médico-chirurgicale" },
+            "orl": { disc: "Chirurgical", duree: 12, socle: 2, approf: 6, consol: 4, postes2026: 96, rangLimite2026: 2732, cesp2026: 1, modes: ["salariat","libéral"], type: "médico-chirurgicale" },
+            "urologie": { disc: "Chirurgical", duree: 12, socle: 2, approf: 6, consol: 4, postes2026: 70, rangLimite2026: 4310, cesp2026: 0, modes: ["salariat","libéral"], type: "médico-chirurgicale" },
+            "allergologie": { disc: "Médical", duree: 8, socle: 2, approf: 4, consol: 2, postes2026: 41, rangLimite2026: 6765, cesp2026: 0, modes: ["salariat","libéral"], type: "médicale" },
+            "anapath": { disc: "Médical", duree: 10, socle: 2, approf: 6, consol: 2, postes2026: 76, rangLimite2026: 7055, cesp2026: 0, modes: ["salariat","libéral"], type: "médicale" },
+            "anesthesie": { disc: "Médical", duree: 10, socle: 2, approf: 6, consol: 2, postes2026: 540, rangLimite2026: 3073, cesp2026: 0, modes: ["salariat","libéral"], type: "médicale" },
+            "cardio": { disc: "Médical", duree: 10, socle: 2, approf: 6, consol: 2, postes2026: 232, rangLimite2026: 3725, cesp2026: 2, modes: [], type: "" },
+            "dermatologie": { disc: "Médical", duree: 8, socle: 2, approf: 4, consol: 2, postes2026: 130, rangLimite2026: 1379, cesp2026: 1, modes: ["libéral"], type: "médicale" },
+            "endocrinologie": { disc: "Médical", duree: 10, socle: 2, approf: 6, consol: 2, postes2026: 110, rangLimite2026: 6065, cesp2026: 0, modes: ["salariat","libéral"], type: "médicale" },
+            "genetique": { disc: "Médical", duree: 8, socle: 2, approf: 4, consol: 2, postes2026: 32, rangLimite2026: 10380, cesp2026: 0, modes: ["salariat","libéral"], type: "médicale" },
+            "geriatrie": { disc: "Médical", duree: 8, socle: 2, approf: 4, consol: 2, postes2026: 212, rangLimite2026: 10264, cesp2026: 1, modes: ["salariat"], type: "médicale" },
+            "gyneco-med": { disc: "Médical", duree: 8, socle: 2, approf: 4, consol: 2, postes2026: 100, rangLimite2026: 4044, cesp2026: 1, modes: ["libéral"], type: "médicale" },
+            "hematologie": { disc: "Médical", duree: 10, socle: 2, approf: 6, consol: 2, postes2026: 58, rangLimite2026: 6715, cesp2026: 0, modes: ["salariat"], type: "médicale" },
+            "hge": { disc: "Médical", duree: 10, socle: 2, approf: 6, consol: 2, postes2026: 158, rangLimite2026: 4214, cesp2026: 1, modes: ["salariat","libéral"], type: "médicale" },
+            "infectiologie": { disc: "Médical", duree: 8, socle: 2, approf: 4, consol: 2, postes2026: 60, rangLimite2026: 6579, cesp2026: 0, modes: ["salariat"], type: "médicale" },
+            "urgences": { disc: "Médical", duree: 8, socle: 2, approf: 4, consol: 2, postes2026: 545, rangLimite2026: 8443, cesp2026: 7, modes: [], type: "" },
+            "med-travail": { disc: "Médical", duree: 8, socle: 2, approf: 4, consol: 2, postes2026: 119, rangLimite2026: 10369, cesp2026: 1, modes: ["salariat","libéral"], type: "médicale" },
+            "med-generale": { disc: "Médical", duree: 8, socle: 2, approf: 4, consol: 2, postes2026: 4070, rangLimite2026: 10195, cesp2026: 312, modes: ["libéral"], type: "médicale" },
+            "mir": { disc: "Médical", duree: 10, socle: 2, approf: 6, consol: 2, postes2026: 106, rangLimite2026: 5612, cesp2026: 0, modes: ["salariat"], type: "médicale" },
+            "med-interne": { disc: "Médical", duree: 10, socle: 2, approf: 6, consol: 2, postes2026: 145, rangLimite2026: 8217, cesp2026: 0, modes: ["salariat"], type: "médicale" },
+            "med-legale": { disc: "Médical", duree: 8, socle: 2, approf: 4, consol: 2, postes2026: 32, rangLimite2026: 9291, cesp2026: 0, modes: ["salariat"], type: "médicale" },
+            "med-nucleaire": { disc: "Médical", duree: 8, socle: 2, approf: 4, consol: 2, postes2026: 44, rangLimite2026: 4644, cesp2026: 0, modes: ["salariat","libéral"], type: "médicale" },
+            "mpr": { disc: "Médical", duree: 8, socle: 2, approf: 4, consol: 2, postes2026: 112, rangLimite2026: 8608, cesp2026: 0, modes: ["salariat","libéral"], type: "médicale" },
+            "med-vasculaire": { disc: "Médical", duree: 8, socle: 2, approf: 4, consol: 2, postes2026: 56, rangLimite2026: 4796, cesp2026: 0, modes: ["libéral"], type: "médicale" },
+            "nephrologie": { disc: "Médical", duree: 10, socle: 2, approf: 6, consol: 2, postes2026: 90, rangLimite2026: 6174, cesp2026: 0, modes: ["salariat","libéral"], type: "médicale" },
+            "neurologie": { disc: "Médical", duree: 8, socle: 2, approf: 4, consol: 2, postes2026: 150, rangLimite2026: 6145, cesp2026: 0, modes: ["salariat","libéral"], type: "médicale" },
+            "oncologie": { disc: "Médical", duree: 10, socle: 2, approf: 6, consol: 2, postes2026: 151, rangLimite2026: 5550, cesp2026: 0, modes: ["salariat"], type: "médicale" },
+            "pediatrie": { disc: "Médical", duree: 10, socle: 2, approf: 6, consol: 2, postes2026: 468, rangLimite2026: 6791, cesp2026: 0, modes: ["salariat","libéral"], type: "médicale" },
+            "pneumologie": { disc: "Médical", duree: 10, socle: 2, approf: 6, consol: 2, postes2026: 156, rangLimite2026: 5741, cesp2026: 0, modes: ["salariat","libéral"], type: "médicale" },
+            "psychiatrie": { disc: "Médical", duree: 10, socle: 2, approf: 6, consol: 2, postes2026: 665, rangLimite2026: 10451, cesp2026: 12, modes: ["salariat","libéral"], type: "médicale" },
+            "radiologie": { disc: "Médical", duree: 10, socle: 2, approf: 6, consol: 2, postes2026: 266, rangLimite2026: 4545, cesp2026: 4, modes: [], type: "médicale" },
+            "rhumatologie": { disc: "Médical", duree: 8, socle: 2, approf: 4, consol: 2, postes2026: 107, rangLimite2026: 5472, cesp2026: 1, modes: ["salariat","libéral"], type: "médicale" },
+            "sante-publique": { disc: "Médical", duree: 8, socle: 2, approf: 4, consol: 2, postes2026: 75, rangLimite2026: 10445, cesp2026: 0, modes: ["salariat"], type: "médicale" },
+            "biologie": { disc: "Biologique", duree: 10, socle: 2, approf: 6, consol: 2, postes2026: 95, rangLimite2026: 10439, cesp2026: 0, modes: ["salariat","libéral"], type: "biologique" }
+        };
+
+        function openSpecialtyModal(id) {
+            const data = SPECIALTY_DATA[id];
+            const fullData = FULL_SPECIALTY_DATA[id];
+            if (!data) return;
+
+            const rank = specialties.findIndex(s => s.id === id) + 1;
+            const item = specialties.find(s => s.id === id);
+            if (!item) return;
+
+            document.getElementById("specialty-modal-rank").textContent = "Rang " + rank + "/" + specialties.length;
+            document.getElementById("specialty-modal-title").textContent = item.name;
+            document.getElementById("specialty-modal-category").textContent = data.disc;
+            document.getElementById("specialty-modal-type").textContent = data.type;
+            document.getElementById("specialty-modal-socle").textContent = data.socle;
+            document.getElementById("specialty-modal-approf").textContent = data.approf;
+            document.getElementById("specialty-modal-consol").textContent = data.consol;
+            document.getElementById("specialty-modal-total").textContent = data.duree + " semestres (" + (data.duree / 2) + " ans)";
+            document.getElementById("specialty-modal-postes").textContent = data.postes2026;
+            document.getElementById("specialty-modal-rang").textContent = data.rangLimite2026.toLocaleString("fr-FR");
+            document.getElementById("specialty-modal-cesp").textContent = data.cesp2026;
+            document.getElementById("specialty-modal-modes").textContent = data.modes.length > 0 ? data.modes.join(" / ") : "—";
+
+            // Full data sections
+            const postesEl = document.getElementById("specialty-modal-postes-details");
+            if (postesEl && fullData) {
+                let html = "";
+                for (const [year, count] of Object.entries(fullData.postes)) {
+                    html += '<div class="flex items-center justify-between text-[11.5px]"><span class="modal-label">Postes ' + year + '</span><span class="modal-value font-medium">' + count + '</span></div>';
+                }
+                postesEl.innerHTML = html;
+            }
+
+            const rangsEl = document.getElementById("specialty-modal-rangs-details");
+            if (rangsEl && fullData) {
+                let html = "";
+                for (const [year, count] of Object.entries(fullData.rangs)) {
+                    html += '<div class="flex items-center justify-between text-[11.5px]"><span class="modal-label">Rang limite ' + year + '</span><span class="modal-value font-medium">' + count.toLocaleString("fr-FR") + '</span></div>';
+                }
+                rangsEl.innerHTML = html;
+            }
+
+            const stagesEl = document.getElementById("specialty-modal-stages");
+            if (stagesEl && fullData) {
+                stagesEl.textContent = fullData.stages_format;
+            }
+
+            const detailsEl = document.getElementById("specialty-modal-details");
+            if (detailsEl && fullData) {
+                let html = "";
+                fullData.details.forEach(d => {
+                    html += '<div class="text-[11px] modal-text-secondary leading-relaxed pl-2 border-l-2 modal-detail-item">' + d + '</div>';
+                });
+                detailsEl.innerHTML = html;
+            }
+
+            const optionsEl = document.getElementById("specialty-modal-options");
+            if (optionsEl && fullData) {
+                if (fullData.options.length > 0) {
+                    let html = '<div class="text-[10px] font-semibold uppercase tracking-wider modal-label mb-1">Options de formation</div>';
+                    fullData.options.forEach(o => {
+                        html += '<div class="text-[11px] modal-value font-medium">• ' + o + '</div>';
+                    });
+                    optionsEl.innerHTML = html;
+                } else {
+                    optionsEl.innerHTML = "";
+                }
+            }
+
+            const modal = document.getElementById("specialty-modal");
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+        }
+
+        function closeSpecialtyModal() {
+            const modal = document.getElementById("specialty-modal");
+            modal.classList.add("hidden");
+            modal.classList.remove("flex");
+        }
+
+        // ===== STATISTICS =====
+        function updateStats() {
+            const top10 = specialties.slice(0, 10);
+            const medCount = top10.filter(s => s.category === "medical").length;
+            const chirCount = top10.filter(s => s.category === "surgical").length;
+            const bioCount = top10.filter(s => s.category === "biology").length;
+
+            // Top 10 bars (out of 10)
+            const medBar = document.getElementById("stat-med-bar");
+            const chirBar = document.getElementById("stat-chir-bar");
+            const bioBar = document.getElementById("stat-bio-bar");
+            if (medBar) medBar.style.width = (medCount / 10 * 100) + "%";
+            if (chirBar) chirBar.style.width = (chirCount / 10 * 100) + "%";
+            if (bioBar) bioBar.style.width = (bioCount / 10 * 100) + "%";
+
+            const medCountEl = document.getElementById("stat-med-count");
+            const chirCountEl = document.getElementById("stat-chir-count");
+            const bioCountEl = document.getElementById("stat-bio-count");
+            if (medCountEl) medCountEl.textContent = medCount;
+            if (chirCountEl) chirCountEl.textContent = chirCount;
+            if (bioCountEl) bioCountEl.textContent = bioCount;
+
+            // Average position per category
+            const categories = ["medical", "surgical", "biology"];
+            const avgIds = ["stat-med-avg", "stat-chir-avg", "stat-bio-avg"];
+            const avgBarIds = ["stat-med-avg-bar", "stat-chir-avg-bar", "stat-bio-avg-bar"];
+
+            categories.forEach((cat, i) => {
+                const items = specialties.filter(s => s.category === cat);
+                const avgEl = document.getElementById(avgIds[i]);
+                const avgBarEl = document.getElementById(avgBarIds[i]);
+                if (items.length > 0) {
+                    const avg = items.reduce((sum, s) => sum + specialties.indexOf(s) + 1, 0) / items.length;
+                    if (avgEl) avgEl.textContent = avg.toFixed(1);
+                    if (avgBarEl) avgBarEl.style.width = Math.min(100, (avg / 44) * 100) + "%";
+                } else {
+                    if (avgEl) avgEl.textContent = "—";
+                    if (avgBarEl) avgBarEl.style.width = "0%";
+                }
+            });
+
+            // Profile pills
+            const pillMed = document.getElementById("stat-pill-med");
+            const pillChir = document.getElementById("stat-pill-chir");
+            const pillBio = document.getElementById("stat-pill-bio");
+            if (pillMed) pillMed.textContent = medCount;
+            if (pillChir) pillChir.textContent = chirCount;
+            if (pillBio) pillBio.textContent = bioCount;
+        }
+
+        function formatRank(rank) {
+            return String(rank).padStart(2, "0");
+        }
+
+        function renderList() {
+            const listEl = document.getElementById("specialties-list");
+            const emptyEl = document.getElementById("empty-state");
+            const q = normalizeStr(searchQuery.trim());
+
+            listEl.innerHTML = "";
+            let visibleCount = 0;
+
+            specialties.forEach((item, index) => {
+                const rank = index + 1;
+                const matchesCategory = activeCategory === "all" || item.category === activeCategory;
+                const matchesSearch = !q ||
+                    normalizeStr(item.name).includes(q) ||
+                    normalizeStr(item.meta).includes(q);
+
+                const isVisible = matchesCategory && matchesSearch;
+                if (isVisible) visibleCount++;
+
+                const row = document.createElement("div");
+                row.dataset.id = item.id;
+                row.className = `des-row ${isVisible ? "" : "hidden"} ${lastMovedId === item.id ? "row-moved" : ""}`;
+
+                row.innerHTML = `
+                    <div class="flex items-center gap-2.5 min-w-0 flex-1 pr-3">
+                        <button type="button" class="drag-handle grip-icon cursor-grab active:cursor-grabbing p-1 -ml-1 shrink-0" aria-label="Déplacer">
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+                                <line x1="2" y1="4.2" x2="10" y2="4.2"></line>
+                                <line x1="2" y1="7.8" x2="10" y2="7.8"></line>
+                            </svg>
+                        </button>
+
+                        <input
+                            type="text"
+                            inputmode="numeric"
+                            value="${formatRank(rank)}"
+                            data-rank-input="${item.id}"
+                            data-current-rank="${rank}"
+                            aria-label="Rang de ${item.name}"
+                            title="Cliquer pour saisir un rang (1–44)"
+                            class="rank-input shrink-0"
+                        />
+
+                        <span class="text-[14px] font-medium specialty-name truncate">${item.name}</span>
+                    </div>
+
+                    <div class="flex items-center gap-3 shrink-0">
+                        <div class="row-actions flex items-center gap-0.5">
+                            <button type="button" data-action="top" data-id="${item.id}" ${rank === 1 ? "disabled" : ""}
+                                class="p-1 rounded row-action-btn disabled:opacity-25 disabled:pointer-events-none"
+                                title="Placer en 1er">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 11l7-7 7 7M5 19l7-7 7 7"></path>
+                                </svg>
+                            </button>
+                            <button type="button" data-action="up" data-id="${item.id}" ${rank === 1 ? "disabled" : ""}
+                                class="p-1 rounded row-action-btn disabled:opacity-25 disabled:pointer-events-none"
+                                title="Monter">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"></path>
+                                </svg>
+                            </button>
+                            <button type="button" data-action="down" data-id="${item.id}" ${rank === 44 ? "disabled" : ""}
+                                class="p-1 rounded row-action-btn disabled:opacity-25 disabled:pointer-events-none"
+                                title="Descendre">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <button type="button" data-action="bottom" data-id="${item.id}" ${rank === 44 ? "disabled" : ""}
+                                class="p-1 rounded row-action-btn disabled:opacity-25 disabled:pointer-events-none"
+                                title="Placer en 44e">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 13l-7 7-7-7m14-8l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <span class="text-[12.5px] text-[#86868B] tabular-nums w-[112px] text-right hidden sm:inline-block">${item.meta}</span>
+                    </div>
+                `;
+
+                listEl.appendChild(row);
+            });
+
+            emptyEl.classList.toggle("hidden", visibleCount > 0);
+        }
+
+        function moveSpecialtyToRank(id, targetRankOneBased) {
+            const currentIndex = specialties.findIndex(s => s.id === id);
+            if (currentIndex === -1) return;
+
+            const clampedRank = Math.max(1, Math.min(specialties.length, targetRankOneBased));
+            const targetIndex = clampedRank - 1;
+
+            if (currentIndex === targetIndex) {
+                renderList();
+                return;
+            }
+
+            pushHistory();
+
+            const [moved] = specialties.splice(currentIndex, 1);
+            specialties.splice(targetIndex, 0, moved);
+
+            lastMovedId = id;
+            renderList();
+            saveState();
+            updateStats();
+
+            const rowEl = document.querySelector(`[data-id="${id}"]`);
+            if (rowEl && !rowEl.classList.contains("hidden")) {
+                const rect = rowEl.getBoundingClientRect();
+                if (rect.top < 40 || rect.bottom > window.innerHeight - 40) {
+                    rowEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                }
+            }
+        }
+
+        function initSortable() {
+            const listEl = document.getElementById("specialties-list");
+            new Sortable(listEl, {
+                animation: 150,
+                easing: "cubic-bezier(0.25, 1, 0.5, 1)",
+                ghostClass: "sortable-ghost",
+                dragClass: "sortable-drag",
+                filter: "input, button:not(.drag-handle)",
+                preventOnFilter: false,
+                onEnd: function (evt) {
+                    if (evt.oldIndex === evt.newIndex) return;
+                    pushHistory();
+                    const domIds = Array.from(listEl.children).map(el => el.dataset.id);
+                    const byId = new Map(specialties.map(s => [s.id, s]));
+                    specialties = domIds.map(id => byId.get(id)).filter(Boolean);
+                    lastMovedId = evt.item.dataset.id;
+                    renderList();
+                    saveState();
+                    updateStats();
+                }
+            });
+        }
+
+        function drawRoundedRect(ctx, x, y, w, h, r) {
+            const radius = Math.min(r, w / 2, h / 2);
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + w - radius, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+            ctx.lineTo(x + w, y + h - radius);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+            ctx.lineTo(x + radius, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+        }
+
+        function wrapTextLines(ctx, text, maxWidth) {
+            const words = text.split(" ");
+            const lines = [];
+            let currentLine = "";
+
+            for (let i = 0; i < words.length; i++) {
+                const word = words[i];
+                const testLine = currentLine ? `${currentLine} ${word}` : word;
+                if (ctx.measureText(testLine).width <= maxWidth || !currentLine) {
+                    currentLine = testLine;
+                } else {
+                    lines.push(currentLine);
+                    currentLine = word;
+                }
+            }
+            if (currentLine) {
+                lines.push(currentLine);
+            }
+            return lines;
+        }
+
+        async function renderA4SheetCanvas(dateStr) {
+            if (document.fonts && document.fonts.ready) {
+                try {
+                    await document.fonts.ready;
+                } catch (e) {
+                    // Fallback to system fonts if font promise fails
+                }
+            }
+
+            // Exact 300 DPI A4 dimensions: 2480 x 3508 px (210mm x 297mm)
+            const W_PX = 2480;
+            const H_PX = 3508;
+            const MM_TO_PX = W_PX / 210;
+            const mm = (v) => v * MM_TO_PX;
+
+            const canvas = document.createElement("canvas");
+            canvas.width = W_PX;
+            canvas.height = H_PX;
+            const ctx = canvas.getContext("2d");
+
+            const FONT_SANS = '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+            const FONT_MONO = '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace';
+
+            // Pure white A4 background
+            ctx.fillStyle = "#FFFFFF";
+            ctx.fillRect(0, 0, W_PX, H_PX);
+            ctx.textBaseline = "middle";
+
+            // Safe print margins: 14mm on all sides -> X: 14..196mm (182mm wide), Y: 14..283mm
+            const MARGIN_X = 14;
+            const CONTENT_W = 182;
+            const RIGHT_X = MARGIN_X + CONTENT_W;
+            const cleanPseudo = userPseudo.trim();
+
+            // 1. EDITORIAL HEADER (Y = 14mm to 30mm)
+            ctx.textAlign = "left";
+            ctx.fillStyle = "#86868B";
+            ctx.font = `600 ${mm(2.35)}px ${FONT_SANS}`;
+            ctx.fillText("R2C · ÉPREUVES DÉMATÉRIALISÉES NATIONALES", mm(MARGIN_X), mm(16.5));
+
+            ctx.fillStyle = "#1D1D1F";
+            ctx.font = `700 ${mm(5.4)}px ${FONT_SANS}`;
+            ctx.fillText("Classement des Vœux de Spécialités (DES)", mm(MARGIN_X), mm(23.5));
+
+            // Right metadata stack
+            ctx.textAlign = "right";
+            if (cleanPseudo) {
+                ctx.fillStyle = "#1D1D1F";
+                ctx.font = `700 ${mm(3.8)}px ${FONT_SANS}`;
+                ctx.fillText(cleanPseudo, mm(RIGHT_X), mm(17.2));
+
+                ctx.fillStyle = "#515154";
+                ctx.font = `500 ${mm(2.65)}px ${FONT_SANS}`;
+                ctx.fillText(`Édition du ${dateStr}`, mm(RIGHT_X), mm(21.8));
+
+                ctx.fillStyle = "#86868B";
+                ctx.font = `400 ${mm(2.35)}px ${FONT_SANS}`;
+                ctx.fillText("44 spécialités classées", mm(RIGHT_X), mm(25.5));
+            } else {
+                ctx.fillStyle = "#1D1D1F";
+                ctx.font = `600 ${mm(2.9)}px ${FONT_SANS}`;
+                ctx.fillText(`Édition du ${dateStr}`, mm(RIGHT_X), mm(20.5));
+
+                ctx.fillStyle = "#86868B";
+                ctx.font = `400 ${mm(2.45)}px ${FONT_SANS}`;
+                ctx.fillText("44 spécialités classées", mm(RIGHT_X), mm(24.8));
+            }
+
+            // Header divider rule
+            ctx.strokeStyle = "#1D1D1F";
+            ctx.lineWidth = mm(0.42);
+            ctx.beginPath();
+            ctx.moveTo(mm(MARGIN_X), mm(29.2));
+            ctx.lineTo(mm(RIGHT_X), mm(29.2));
+            ctx.stroke();
+
+            // 2. VŒUX PRIORITAIRES — TOP 3 (Y = 34mm to 60.5mm)
+            ctx.textAlign = "left";
+            ctx.fillStyle = "#86868B";
+            ctx.font = `600 ${mm(2.2)}px ${FONT_SANS}`;
+            ctx.fillText("VŒUX PRIORITAIRES (TOP 3)", mm(MARGIN_X), mm(34.2));
+
+            const topBoxY = 36.8;
+            const topBoxH = 22.5;
+            const cardW = CONTENT_W / 3;
+
+            drawRoundedRect(ctx, mm(MARGIN_X), mm(topBoxY), mm(CONTENT_W), mm(topBoxH), mm(1.8));
+            ctx.fillStyle = "#F5F5F7";
+            ctx.fill();
+            ctx.lineWidth = mm(0.26);
+            ctx.strokeStyle = "#D2D2D7";
+            ctx.stroke();
+
+            const top3 = specialties.slice(0, 3);
+            top3.forEach((item, idx) => {
+                const cardX = MARGIN_X + idx * cardW;
+
+                // Vertical separator between cards
+                if (idx > 0) {
+                    ctx.beginPath();
+                    ctx.moveTo(mm(cardX), mm(topBoxY));
+                    ctx.lineTo(mm(cardX), mm(topBoxY + topBoxH));
+                    ctx.strokeStyle = "#D2D2D7";
+                    ctx.lineWidth = mm(0.26);
+                    ctx.stroke();
+                }
+
+                // Rank badge 01 / 02 / 03
+                const badgeX = cardX + 3.2;
+                const badgeY = topBoxY + 3.0;
+                const badgeW = 6.6;
+                const badgeH = 4.5;
+                drawRoundedRect(ctx, mm(badgeX), mm(badgeY), mm(badgeW), mm(badgeH), mm(0.9));
+                ctx.fillStyle = "#1D1D1F";
+                ctx.fill();
+
+                ctx.fillStyle = "#FFFFFF";
+                ctx.font = `600 ${mm(2.5)}px ${FONT_MONO}`;
+                ctx.textAlign = "center";
+                ctx.fillText(`0${idx + 1}`, mm(badgeX + badgeW / 2), mm(badgeY + badgeH / 2 + 0.1));
+
+                // Maquette on top right of card
+                ctx.textAlign = "right";
+                ctx.fillStyle = "#6E6E73";
+                ctx.font = `500 ${mm(2.35)}px ${FONT_SANS}`;
+                ctx.fillText(item.meta, mm(cardX + cardW - 3.2), mm(badgeY + badgeH / 2));
+
+                // Specialty name wrapped cleanly inside card (never clipped)
+                ctx.textAlign = "left";
+                ctx.fillStyle = "#1D1D1F";
+                ctx.font = `600 ${mm(2.95)}px ${FONT_SANS}`;
+                const maxCardTextW = mm(cardW - 6.4);
+                const lines = wrapTextLines(ctx, item.name, maxCardTextW);
+
+                if (lines.length === 1) {
+                    ctx.fillText(lines[0], mm(cardX + 3.2), mm(topBoxY + 14.2));
+                } else {
+                    ctx.fillText(lines[0], mm(cardX + 3.2), mm(topBoxY + 12.4));
+                    ctx.fillText(lines[1], mm(cardX + 3.2), mm(topBoxY + 16.3));
+                }
+            });
+
+            // 3. TWO-COLUMN 44 DES TABLE (Y = 65.5mm to 269.5mm)
+            const colGap = 7.0;
+            const colW = (CONTENT_W - colGap) / 2; // 87.5mm per column
+            const leftColX = MARGIN_X;
+            const rightColX = MARGIN_X + colW + colGap;
+
+            const tableHeaderY = 66.2;
+            const tableTopRuleY = 68.8;
+            const rowH = 9.05; // 22 * 9.05mm = 199.1mm -> ends at 267.9mm
+
+            [leftColX, rightColX].forEach((colX) => {
+                ctx.textAlign = "left";
+                ctx.fillStyle = "#86868B";
+                ctx.font = `600 ${mm(2.15)}px ${FONT_SANS}`;
+                ctx.fillText("RANG", mm(colX + 1.5), mm(tableHeaderY));
+                ctx.fillText("SPÉCIALITÉ", mm(colX + 11.2), mm(tableHeaderY));
+
+                ctx.textAlign = "right";
+                ctx.fillText("MAQUETTE", mm(colX + colW - 1.5), mm(tableHeaderY));
+
+                ctx.beginPath();
+                ctx.moveTo(mm(colX), mm(tableTopRuleY));
+                ctx.lineTo(mm(colX + colW), mm(tableTopRuleY));
+                ctx.strokeStyle = "#1D1D1F";
+                ctx.lineWidth = mm(0.32);
+                ctx.stroke();
+            });
+
+            const drawColumnRows = (items, startRank, colX) => {
+                items.forEach((item, idx) => {
+                    const rank = startRank + idx;
+                    const rowY = tableTopRuleY + idx * rowH;
+                    const centerY = rowY + rowH / 2;
+
+                    // Subtle zebra striping
+                    if (idx % 2 === 1) {
+                        ctx.fillStyle = "#FAFAFC";
+                        ctx.fillRect(mm(colX), mm(rowY), mm(colW), mm(rowH));
+                    }
+
+                    // Row hairline border
+                    ctx.beginPath();
+                    ctx.moveTo(mm(colX), mm(rowY + rowH));
+                    ctx.lineTo(mm(colX + colW), mm(rowY + rowH));
+                    ctx.strokeStyle = "#E5E5EA";
+                    ctx.lineWidth = mm(0.18);
+                    ctx.stroke();
+
+                    // Rank badge (01-03 dark fill, 04-10 framed pill, 11-44 tabular muted)
+                    const bX = colX + 1.5;
+                    const bW = 6.8;
+                    const bH = 4.6;
+                    const bY = centerY - bH / 2;
+                    const rStr = formatRank(rank);
+
+                    if (rank <= 3) {
+                        drawRoundedRect(ctx, mm(bX), mm(bY), mm(bW), mm(bH), mm(0.9));
+                        ctx.fillStyle = "#1D1D1F";
+                        ctx.fill();
+                        ctx.fillStyle = "#FFFFFF";
+                        ctx.font = `600 ${mm(2.45)}px ${FONT_MONO}`;
+                    } else if (rank <= 10) {
+                        drawRoundedRect(ctx, mm(bX), mm(bY), mm(bW), mm(bH), mm(0.9));
+                        ctx.fillStyle = "#F5F5F7";
+                        ctx.fill();
+                        ctx.lineWidth = mm(0.24);
+                        ctx.strokeStyle = "#C7C7CC";
+                        ctx.stroke();
+                        ctx.fillStyle = "#1D1D1F";
+                        ctx.font = `600 ${mm(2.45)}px ${FONT_MONO}`;
+                    } else {
+                        ctx.fillStyle = "#86868B";
+                        ctx.font = `500 ${mm(2.45)}px ${FONT_MONO}`;
+                    }
+
+                    ctx.textAlign = "center";
+                    ctx.fillText(rStr, mm(bX + bW / 2), mm(centerY + 0.1));
+
+                    // Maquette label on the right
+                    ctx.textAlign = "right";
+                    ctx.fillStyle = "#86868B";
+                    ctx.font = `500 ${mm(2.25)}px ${FONT_MONO}`;
+                    const metaRightX = colX + colW - 1.5;
+                    ctx.fillText(item.shortMeta, mm(metaRightX), mm(centerY));
+
+                    // Specialty name with automatic 2-line wrapping so zero text is ever cut off
+                    const nameX = colX + 10.6;
+                    const maxNameWidth = mm(colW - 10.6 - 19.5);
+                    ctx.textAlign = "left";
+                    ctx.fillStyle = "#1D1D1F";
+                    ctx.font = `${rank <= 10 ? 600 : 400} ${mm(2.78)}px ${FONT_SANS}`;
+
+                    const nameLines = wrapTextLines(ctx, item.name, maxNameWidth);
+                    if (nameLines.length === 1) {
+                        ctx.fillText(nameLines[0], mm(nameX), mm(centerY));
+                    } else {
+                        ctx.font = `${rank <= 10 ? 600 : 400} ${mm(2.62)}px ${FONT_SANS}`;
+                        ctx.fillText(nameLines[0], mm(nameX), mm(centerY - 1.65));
+                        ctx.fillText(nameLines[1], mm(nameX), mm(centerY + 1.65));
+                    }
+                });
+            };
+
+            drawColumnRows(specialties.slice(0, 22), 1, leftColX);
+            drawColumnRows(specialties.slice(22, 44), 23, rightColX);
+
+            // 4. EDITORIAL FOOTER (Y = 274.5mm to 281mm — 16mm above bottom edge)
+            const footerLineY = 274.5;
+            const footerTextY = 279.2;
+
+            ctx.beginPath();
+            ctx.moveTo(mm(MARGIN_X), mm(footerLineY));
+            ctx.lineTo(mm(RIGHT_X), mm(footerLineY));
+            ctx.strokeStyle = "#D2D2D7";
+            ctx.lineWidth = mm(0.28);
+            ctx.stroke();
+
+            const top10 = specialties.slice(0, 10);
+            const medCount = top10.filter(s => s.category === "medical").length;
+            const chirCount = top10.filter(s => s.category === "surgical").length;
+            const bioCount = top10.filter(s => s.category === "biology").length;
+
+            ctx.textAlign = "left";
+            ctx.fillStyle = "#1D1D1F";
+            ctx.font = `600 ${mm(2.35)}px ${FONT_SANS}`;
+            const labelProfile = "Profil du Top 10 : ";
+            ctx.fillText(labelProfile, mm(MARGIN_X), mm(footerTextY));
+            const labelW = ctx.measureText(labelProfile).width;
+
+            ctx.fillStyle = "#6E6E73";
+            ctx.font = `400 ${mm(2.35)}px ${FONT_SANS}`;
+            ctx.fillText(
+                `${medCount} Médecine · ${chirCount} Chirurgie · ${bioCount} Biologie`,
+                mm(MARGIN_X) + labelW,
+                mm(footerTextY)
+            );
+
+            ctx.textAlign = "right";
+            ctx.fillStyle = "#86868B";
+            ctx.font = `400 ${mm(2.35)}px ${FONT_SANS}`;
+            const footerRight = `R2C / EDN${cleanPseudo ? ` · ${cleanPseudo}` : ""} · ${dateStr} · Page 1/1`;
+            ctx.fillText(footerRight, mm(RIGHT_X), mm(footerTextY));
+
+            return canvas;
+        }
+
+        function getFormattedDate() {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString("fr-FR", {
+                day: "2-digit",
+                month: "long",
+                year: "numeric"
+            });
+            const isoDate = now.toISOString().slice(0, 10);
+            return { dateStr, isoDate };
+        }
+
+        async function exportToPDF() {
+            const btn = document.getElementById("btn-export-pdf");
+            const label = document.getElementById("export-btn-label");
+            const originalText = label.textContent;
+
+            try {
+                btn.disabled = true;
+                label.textContent = "Génération…";
+
+                const { dateStr, isoDate } = getFormattedDate();
+                const canvas = await renderA4SheetCanvas(dateStr);
+
+                const imgData = canvas.toDataURL("image/jpeg", 0.98);
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({
+                    orientation: "portrait",
+                    unit: "mm",
+                    format: "a4",
+                    compress: true
+                });
+
+                doc.addImage(imgData, "JPEG", 0, 0, 210, 297, undefined, "FAST");
+
+                const slugPseudo = userPseudo.trim()
+                    ? "-" + userPseudo.trim().replace(/[^a-zA-Z0-9_-]/g, "-")
+                    : "";
+                doc.save(`Classement-DES-R2C${slugPseudo}-${isoDate}.pdf`);
+            } catch (err) {
+                console.error("Erreur lors de la génération du PDF:", err);
+            } finally {
+                btn.disabled = false;
+                label.textContent = originalText;
+            }
+        }
+
+        async function openPdfPreviewModal() {
+            const modal = document.getElementById("pdf-preview-modal");
+            const previewImg = document.getElementById("pdf-preview-img");
+            const { dateStr } = getFormattedDate();
+
+            const canvas = await renderA4SheetCanvas(dateStr);
+            previewImg.src = canvas.toDataURL("image/png");
+
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            loadState();
+            renderList();
+            initSortable();
+
+            // Pseudo input initialization & persistence
+            const pseudoInput = document.getElementById("pseudo-input");
+            pseudoInput.value = userPseudo;
+            pseudoInput.addEventListener("input", (e) => {
+                userPseudo = e.target.value;
+                savePseudo();
+            });
+
+            const listEl = document.getElementById("specialties-list");
+
+            // Row quick-move buttons
+            listEl.addEventListener("click", (e) => {
+                const btn = e.target.closest("button[data-action]");
+                if (!btn) return;
+                const id = btn.dataset.id;
+                const action = btn.dataset.action;
+                const idx = specialties.findIndex(s => s.id === id);
+                if (idx === -1) return;
+
+                if (action === "top") moveSpecialtyToRank(id, 1);
+                else if (action === "up") moveSpecialtyToRank(id, idx);
+                else if (action === "down") moveSpecialtyToRank(id, idx + 2);
+                else if (action === "bottom") moveSpecialtyToRank(id, specialties.length);
+            });
+
+            // Direct rank input editing
+            listEl.addEventListener("focusin", (e) => {
+                if (e.target.matches("input[data-rank-input]")) {
+                    e.target.value = e.target.dataset.currentRank;
+                    e.target.select();
+                }
+            });
+
+            listEl.addEventListener("keydown", (e) => {
+                if (e.target.matches("input[data-rank-input]")) {
+                    if (e.key === "Enter") {
+                        e.preventDefault();
+                        e.target.blur();
+                    } else if (e.key === "Escape") {
+                        e.target.value = formatRank(e.target.dataset.currentRank);
+                        e.target.blur();
+                    }
+                }
+            });
+
+            listEl.addEventListener("focusout", (e) => {
+                if (e.target.matches("input[data-rank-input]")) {
+                    const id = e.target.dataset.rankInput;
+                    const currentRank = parseInt(e.target.dataset.currentRank, 10);
+                    const parsed = parseInt(e.target.value, 10);
+                    if (!isNaN(parsed) && parsed !== currentRank) {
+                        moveSpecialtyToRank(id, parsed);
+                    } else {
+                        e.target.value = formatRank(currentRank);
+                    }
+                }
+            });
+
+            // Segmented control filters
+            const filterBtns = document.querySelectorAll("button[data-filter]");
+            filterBtns.forEach(btn => {
+                btn.addEventListener("click", () => {
+                    filterBtns.forEach(b => b.classList.remove("active"));
+                    btn.classList.add("active");
+                    activeCategory = btn.dataset.filter;
+                    lastMovedId = null;
+                    renderList();
+                });
+            });
+
+            // Search input & "/" shortcut
+            const searchInput = document.getElementById("search-input");
+            const clearSearch = document.getElementById("clear-search");
+            const searchKbd = document.getElementById("search-kbd");
+
+            function updateSearchUI() {
+                const hasText = searchQuery.length > 0;
+                clearSearch.classList.toggle("hidden", !hasText);
+                searchKbd.classList.toggle("hidden", hasText);
+            }
+
+            searchInput.addEventListener("input", (e) => {
+                searchQuery = e.target.value;
+                lastMovedId = null;
+                updateSearchUI();
+                renderList();
+            });
+
+            clearSearch.addEventListener("click", () => {
+                searchQuery = "";
+                searchInput.value = "";
+                updateSearchUI();
+                renderList();
+            });
+
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "/" && document.activeElement !== searchInput && !document.activeElement.matches("input")) {
+                    e.preventDefault();
+                    searchInput.focus();
+                }
+            });
+
+            // Reset confirmation modal
+            const resetModal = document.getElementById("reset-modal");
+            document.getElementById("btn-reset-modal").addEventListener("click", () => {
+                resetModal.classList.remove("hidden");
+                resetModal.classList.add("flex");
+            });
+
+            document.getElementById("cancel-reset-btn").addEventListener("click", () => {
+                resetModal.classList.add("hidden");
+                resetModal.classList.remove("flex");
+            });
+
+            document.getElementById("confirm-reset-btn").addEventListener("click", () => {
+                pushHistory();
+                specialties = getAlphabeticalDefault();
+                lastMovedId = null;
+                renderList();
+                saveState();
+                updateStats();
+                resetModal.classList.add("hidden");
+                resetModal.classList.remove("flex");
+            });
+
+            // PDF Preview & Export handlers
+            const previewModal = document.getElementById("pdf-preview-modal");
+            document.getElementById("btn-preview-pdf").addEventListener("click", openPdfPreviewModal);
+            document.getElementById("close-preview-btn").addEventListener("click", () => {
+                previewModal.classList.add("hidden");
+                previewModal.classList.remove("flex");
+            });
+            document.getElementById("modal-download-pdf-btn").addEventListener("click", () => {
+                exportToPDF();
+            });
+            previewModal.addEventListener("click", (e) => {
+                if (e.target === previewModal) {
+                    previewModal.classList.add("hidden");
+                    previewModal.classList.remove("flex");
+                }
+            });
+
+            document.getElementById("btn-export-pdf").addEventListener("click", exportToPDF);
+
+            // Undo/Redo buttons
+            document.getElementById("btn-undo").addEventListener("click", undo);
+            document.getElementById("btn-redo").addEventListener("click", redo);
+
+            // Theme toggle
+            document.getElementById("btn-theme-toggle").addEventListener("click", toggleTheme);
+
+            // Keyboard shortcuts: Ctrl+Z (undo), Ctrl+Y / Ctrl+Shift+Z (redo)
+            document.addEventListener("keydown", (e) => {
+                if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === "z") {
+                    const active = document.activeElement;
+                    if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA")) return;
+                    e.preventDefault();
+                    undo();
+                } else if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === "y" || (e.shiftKey && e.key.toLowerCase() === "z"))) {
+                    const active = document.activeElement;
+                    if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA")) return;
+                    e.preventDefault();
+                    redo();
+                }
+            });
+
+            // Initialize theme
+            applyTheme(getPreferredTheme());
+
+            // Initialize stats
+            updateStats();
+
+            // Specialty modal
+            const specialtyModal = document.getElementById("specialty-modal");
+            document.getElementById("specialty-modal-close").addEventListener("click", closeSpecialtyModal);
+            specialtyModal.addEventListener("click", (e) => {
+                if (e.target === specialtyModal) closeSpecialtyModal();
+            });
+            document.getElementById("specialty-modal-up").addEventListener("click", () => {
+                const title = document.getElementById("specialty-modal-title").textContent;
+                const item = specialties.find(s => s.name === title);
+                if (item) {
+                    const idx = specialties.indexOf(item);
+                    if (idx > 0) moveSpecialtyToRank(item.id, idx);
+                    closeSpecialtyModal();
+                }
+            });
+            document.getElementById("specialty-modal-down").addEventListener("click", () => {
+                const title = document.getElementById("specialty-modal-title").textContent;
+                const item = specialties.find(s => s.name === title);
+                if (item) {
+                    const idx = specialties.indexOf(item);
+                    if (idx < specialties.length - 1) moveSpecialtyToRank(item.id, idx + 2);
+                    closeSpecialtyModal();
+                }
+            });
+
+            // Open modal on specialty name click
+            listEl.addEventListener("click", (e) => {
+                const nameEl = e.target.closest(".specialty-name");
+                if (nameEl) {
+                    const row = nameEl.closest(".des-row");
+                    if (row) openSpecialtyModal(row.dataset.id);
+                }
+            });
+
+            // Initialize history with current state
+            historyStack = [specialties.map(s => s.id)];
+            historyIndex = 0;
+
+            // Initialize undo/redo button states
+            updateUndoRedoButtons();
+        });
+    </script>
+</body>
+</html>
