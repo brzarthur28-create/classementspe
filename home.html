@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accueil — Classement DES R2C</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Inter", system-ui, sans-serif;
+            background: #F5F5F7;
+            color: #1D1D1F;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .card {
+            background: #FFFFFF;
+            border-radius: 16px;
+            padding: 48px 40px;
+            max-width: 360px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.04);
+        }
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: #F5F5F7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+        .card-icon svg {
+            width: 22px;
+            height: 22px;
+            stroke: #1D1D1F;
+        }
+        .card h1 {
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            margin-bottom: 8px;
+        }
+        .card p {
+            font-size: 14px;
+            color: #86868B;
+            line-height: 1.5;
+            margin-bottom: 28px;
+        }
+        .card .meta {
+            font-size: 12px;
+            color: #AEAEB2;
+            margin-bottom: 24px;
+        }
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: 100%;
+            height: 44px;
+            background: #1D1D1F;
+            color: #FFFFFF;
+            font-size: 14px;
+            font-weight: 500;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: opacity 0.15s ease;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn svg { width: 14px; height: 14px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6"/>
+                <line x1="8" y1="12" x2="21" y2="12"/>
+                <line x1="8" y1="18" x2="21" y2="18"/>
+                <line x1="3" y1="6" x2="3.01" y2="6"/>
+                <line x1="3" y1="12" x2="3.01" y2="12"/>
+                <line x1="3" y1="18" x2="3.01" y2="18"/>
+            </svg>
+        </div>
+        <h1>Classement DES</h1>
+        <p>Classez les 44 spécialités du DES selon vos préférences et exportez votre classement en PDF.</p>
+        <div class="meta">R2C · Édition 2026</div>
+        <a href="index.html" class="btn">
+            Accéder au classement
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5-5 5M6 12h12"/>
+            </svg>
+        </a>
+    </div>
+</body>
+</html>
