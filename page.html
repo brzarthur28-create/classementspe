@@ -643,6 +643,86 @@
         .dot-surgical { background: #007AFF; }
         .dot-biology { background: #FF9500; }
 
+        /* ===== COMPETITIVENESS CHART ===== */
+        .stats-group-full {
+            width: 100%;
+        }
+
+        .competitiveness-chart {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .comp-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            height: 18px;
+        }
+
+        .comp-label {
+            font-size: 10.5px;
+            color: var(--text-secondary);
+            width: 140px;
+            min-width: 140px;
+            text-align: right;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+            transition: color 0.12s ease;
+        }
+
+        .comp-label:hover {
+            color: var(--text-primary);
+        }
+
+        .comp-bar-track {
+            flex: 1;
+            height: 14px;
+            background: var(--stat-bar-bg);
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .comp-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .comp-bar-fill.medical { background: #34C759; }
+        .comp-bar-fill.surgical { background: #007AFF; }
+        .comp-bar-fill.biology { background: #FF9500; }
+
+        .comp-value {
+            font-size: 10.5px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            width: 42px;
+            min-width: 42px;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .comp-cesp {
+            font-size: 9.5px;
+            font-weight: 600;
+            padding: 1px 5px;
+            border-radius: 4px;
+            background: #FF3B30;
+            color: #FFFFFF;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        .comp-cesp.zero {
+            background: var(--segment-bg);
+            color: var(--text-muted);
+        }
+
         /* ===== UNDO/REDO & THEME TOGGLE ===== */
         .icon-btn {
             display: inline-flex;
@@ -897,6 +977,30 @@
             </div>
         </div>
 
+        <!-- Rangs Limites Floating Window -->
+        <div id="rangs-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/30 backdrop-blur-[4px]">
+            <div class="bg-white rounded-[12px] max-w-[680px] w-full max-h-[85vh] flex flex-col border border-black/10 shadow-2xl overflow-hidden">
+                <div class="flex items-center justify-between px-5 py-4 border-b border-black/[0.08]">
+                    <div class="flex items-baseline gap-2">
+                        <h2 class="text-[15px] font-semibold">Rangs limites 2026</h2>
+                        <span class="text-[12px] text-[#86868B]">Compétitivité par spécialité</span>
+                    </div>
+                    <button id="close-rangs-btn" type="button" class="p-1.5 rounded-[6px] transition hover:bg-black/5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                    </button>
+                </div>
+                <div class="p-5 overflow-y-auto flex-1">
+                    <div class="flex items-center gap-4 mb-4 text-[11px] text-[#86868B]">
+                        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full" style="background:#34C759"></span>Médecine</span>
+                        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full" style="background:#007AFF"></span>Chirurgie</span>
+                        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full" style="background:#FF9500"></span>Biologie</span>
+                        <span class="ml-auto text-[10px] text-[#AEAEB2]">Cliquer sur un nom pour voir la fiche</span>
+                    </div>
+                    <div class="competitiveness-chart" id="competitiveness-chart"></div>
+                </div>
+            </div>
+        </div>
+
         <!-- Filter, Pseudo & Search Toolbar -->
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-2.5 mb-3">
             <div class="segmented-control self-start shrink-0" role="tablist">
@@ -908,14 +1012,14 @@
 
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
                 <!-- Minimalist Pseudo Input -->
-                <label class="macos-field flex items-center px-2.5 w-full sm:w-48 shrink-0 cursor-text">
+                <label class="macos-field flex items-center px-2.5 w-full sm:w-36 shrink-0 cursor-text">
                     <span class="text-[11.5px] font-medium text-[#86868B] select-none pr-2 border-r border-black/[0.07]">Pseudo</span>
                     <input id="pseudo-input" type="text" maxlength="32" placeholder="Ajouter un pseudo…"
                         class="w-full pl-2 bg-transparent text-[13px] input-text placeholder-muted focus:outline-none">
                 </label>
 
                 <!-- Search Input -->
-                <div class="macos-field relative flex items-center w-full sm:w-48 shrink-0">
+                <div class="macos-field relative flex items-center w-full sm:w-40 shrink-0">
                     <svg class="w-3.5 h-3.5 text-[#86868B] absolute left-2.5 pointer-events-none" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.2-5.2m1.7-4.3a6 6 0 11-12 0 6 6 0 0112 0z"></path>
                     </svg>
@@ -928,6 +1032,14 @@
                         </svg>
                     </button>
                 </div>
+                <button id="btn-toggle-rangs" type="button"
+                    class="h-8 px-2.5 rounded-[6px] text-[12.5px] font-medium btn-preview flex items-center gap-1.5 shrink-0">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                    <span>Rangs</span>
+                    <svg class="w-3 h-3 transition-transform duration-200" id="rangs-arrow" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                </button>
             </div>
         </div>
 
@@ -1522,6 +1634,38 @@
             if (pillMed) pillMed.textContent = medCount;
             if (pillChir) pillChir.textContent = chirCount;
             if (pillBio) pillBio.textContent = bioCount;
+
+            // Competitiveness chart
+            const chartEl = document.getElementById("competitiveness-chart");
+            if (chartEl) {
+                const sorted = [...specialties].sort((a, b) => {
+                    const ra = SPECIALTY_DATA[a.id]?.rangLimite2026 || 99999;
+                    const rb = SPECIALTY_DATA[b.id]?.rangLimite2026 || 99999;
+                    return ra - rb;
+                });
+                const maxRang = Math.max(...sorted.map(s => SPECIALTY_DATA[s.id]?.rangLimite2026 || 1));
+
+                chartEl.innerHTML = sorted.map(item => {
+                    const data = SPECIALTY_DATA[item.id];
+                    if (!data) return "";
+                    const rang = data.rangLimite2026;
+                    const pct = Math.max(3, (rang / maxRang) * 100);
+                    const shortName = item.name.length > 24 ? item.name.slice(0, 22) + "…" : item.name;
+                    return `
+                        <div class="comp-row">
+                            <span class="comp-label" data-id="${item.id}" title="${item.name}">${shortName}</span>
+                            <div class="comp-bar-track">
+                                <div class="comp-bar-fill ${item.category}" style="width: ${pct}%"></div>
+                            </div>
+                            <span class="comp-value">${rang.toLocaleString("fr-FR")}</span>
+                        </div>
+                    `;
+                }).join("");
+
+                chartEl.querySelectorAll(".comp-label").forEach(el => {
+                    el.addEventListener("click", () => openSpecialtyModal(el.dataset.id));
+                });
+            }
         }
 
         function formatRank(rank) {
@@ -2227,6 +2371,43 @@
 
             // Initialize stats
             updateStats();
+
+            // Rangs limites floating window
+            const rangsModal = document.getElementById("rangs-modal");
+            const btnToggleRangs = document.getElementById("btn-toggle-rangs");
+            const rangsArrow = document.getElementById("rangs-arrow");
+            const closeRangsBtn = document.getElementById("close-rangs-btn");
+
+            function openRangsModal() {
+                if (!rangsModal) return;
+                updateStats();
+                rangsModal.classList.remove("hidden");
+                rangsModal.classList.add("flex");
+                if (rangsArrow) rangsArrow.style.transform = "rotate(90deg)";
+            }
+
+            function closeRangsModal() {
+                if (!rangsModal) return;
+                rangsModal.classList.add("hidden");
+                rangsModal.classList.remove("flex");
+                if (rangsArrow) rangsArrow.style.transform = "rotate(0deg)";
+            }
+
+            if (btnToggleRangs) {
+                btnToggleRangs.addEventListener("click", () => {
+                    if (rangsModal.classList.contains("hidden")) {
+                        openRangsModal();
+                    } else {
+                        closeRangsModal();
+                    }
+                });
+            }
+            if (closeRangsBtn) closeRangsBtn.addEventListener("click", closeRangsModal);
+            if (rangsModal) {
+                rangsModal.addEventListener("click", (e) => {
+                    if (e.target === rangsModal) closeRangsModal();
+                });
+            }
 
             // Specialty modal
             const specialtyModal = document.getElementById("specialty-modal");
